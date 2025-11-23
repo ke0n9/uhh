@@ -1,0 +1,441 @@
+-- == Fly Detection Bypass for Roblox ==
+-- Author: Colin
+-- Description: Bypass anti-fly detection systems with multiple methods
+
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+
+local Window = Rayfield:CreateWindow({
+    Name = "Fly Detection Bypass",
+    LoadingTitle = "Fly Detection Bypass",
+    LoadingSubtitle = "by Colin",
+    ConfigurationSaving = {
+        Enabled = true,
+        FolderName = "FlyBypass",
+        FileName = "Config"
+    },
+    Discord = {
+        Enabled = false,
+        Invite = "noinvite",
+        RememberJoins = true
+    },
+    KeySystem = false,
+})
+
+local MainTab = Window:CreateTab("Bypass Methods", 4483362458)
+local SettingsTab = Window:CreateTab("Fly Settings", 4483362458)
+local AdvancedTab = Window:CreateTab("Advanced", 4483362458)
+
+-- A. BYPASS METHODS
+local BypassSection = MainTab:CreateSection("Detection Bypass Methods")
+
+local VelocityBypass = MainTab:CreateToggle({
+    Name = "Velocity Simulation Bypass",
+    CurrentValue = false,
+    Flag = "VelocityBypass",
+    Callback = function(Value)
+        getgenv().VelocityBypassEnabled = Value
+        if Value then
+            EnableVelocityBypass()
+        end
+    end,
+})
+
+local NetworkBypass = MainTab:CreateToggle({
+    Name = "Network Ownership Bypass",
+    CurrentValue = false,
+    Flag = "NetworkBypass",
+    Callback = function(Value)
+        getgenv().NetworkBypassEnabled = Value
+        if Value then
+            EnableNetworkBypass()
+        end
+    end,
+})
+
+local CharacterBypass = MainTab:CreateToggle({
+    Name = "Character State Bypass",
+    CurrentValue = false,
+    Flag = "CharacterBypass",
+    Callback = function(Value)
+        getgenv().CharacterBypassEnabled = Value
+        if Value then
+            EnableCharacterBypass()
+        end
+    end,
+})
+
+local AntiTeleport = MainTab:CreateToggle({
+    Name = "Anti-Teleport Detection",
+    CurrentValue = false,
+    Flag = "AntiTeleport",
+    Callback = function(Value)
+        getgenv().AntiTeleportEnabled = Value
+        if Value then
+            EnableAntiTeleport()
+        end
+    end,
+})
+
+-- B. FLY SETTINGS
+local FlySection = SettingsTab:CreateSection("Fly Configuration")
+
+local FlySpeed = SettingsTab:CreateSlider({
+    Name = "Fly Speed",
+    Range = {16, 200},
+    Increment = 1,
+    Suffix = "studs/s",
+    CurrentValue = 50,
+    Flag = "FlySpeed",
+    Callback = function(Value)
+        getgenv().FlySpeed = Value
+    end,
+})
+
+local FlyKeybind = SettingsTab:CreateKeybind({
+    Name = "Fly Toggle Keybind",
+    CurrentKeybind = "F",
+    HoldToInteract = false,
+    Flag = "FlyKeybind",
+    Callback = function(Key)
+        getgenv().FlyToggleKey = Key
+    end,
+})
+
+local FlyMode = SettingsTab:CreateDropdown({
+    Name = "Fly Mode",
+    Options = {"Normal", "CFrame", "BodyVelocity", "BodyPosition"},
+    CurrentOption = "CFrame",
+    Flag = "FlyMode",
+    Callback = function(Option)
+        getgenv().FlyMode = Option
+    end,
+})
+
+-- C. ADVANCED BYPASS SETTINGS
+local AdvancedSection = AdvancedTab:CreateSection("Advanced Bypass")
+
+local FakeGravity = AdvancedTab:CreateToggle({
+    Name = "Fake Gravity Simulation",
+    CurrentValue = true,
+    Flag = "FakeGravity",
+    Callback = function(Value)
+        getgenv().FakeGravityEnabled = Value
+    end,
+})
+
+local SmoothMovement = AdvancedTab:CreateToggle({
+    Name = "Smooth Movement Interpolation",
+    CurrentValue = true,
+    Flag = "SmoothMovement",
+    Callback = function(Value)
+        getgenv().SmoothMovementEnabled = Value
+    end,
+})
+
+local DetectionEvasion = AdvancedTab:CreateToggle({
+    Name = "Random Detection Evasion",
+    CurrentValue = true,
+    Flag = "DetectionEvasion",
+    Callback = function(Value)
+        getgenv().DetectionEvasionEnabled = Value
+    end,
+})
+
+-- D. BYPASS FUNCTIONS
+function EnableVelocityBypass()
+    local RunService = game:GetService("RunService")
+    local Players = game:GetService("Players")
+    local LocalPlayer = Players.LocalPlayer
+    
+    local VelocityBypassConnection
+    VelocityBypassConnection = RunService.Heartbeat:Connect(function()
+        if not getgenv().VelocityBypassEnabled then
+            VelocityBypassConnection:Disconnect()
+            return
+        end
+        
+        local character = LocalPlayer.Character
+        if character and character:FindFirstChild("HumanoidRootPart") then
+            local rootPart = character.HumanoidRootPart
+            
+            -- Simulate realistic velocity patterns
+            if getgenv().Flying then
+                -- Add random velocity variations to avoid detection
+                local currentVelocity = rootPart.Velocity
+                rootPart.Velocity = Vector3.new(
+                    currentVelocity.X * 0.95 + (math.random() - 0.5) * 2,
+                    currentVelocity.Y * 0.98 + (math.random() - 0.5),
+                    currentVelocity.Z * 0.95 + (math.random() - 0.5) * 2
+                )
+            end
+        end
+    end)
+end
+
+function EnableNetworkBypass()
+    local RunService = game:GetService("RunService")
+    local Players = game:GetService("Players")
+    local LocalPlayer = Players.LocalPlayer
+    
+    local NetworkBypassConnection
+    NetworkBypassConnection = RunService.Heartbeat:Connect(function()
+        if not getgenv().NetworkBypassEnabled then
+            NetworkBypassConnection:Disconnect()
+            return
+        end
+        
+        local character = LocalPlayer.Character
+        if character and character:FindFirstChild("HumanoidRootPart") then
+            local rootPart = character.HumanoidRootPart
+            
+            -- Force network ownership to client
+            if not rootPart:IsNetworkOwner() then
+                local success = pcall(function()
+                    rootPart:SetNetworkOwner(nil)
+                    rootPart:SetNetworkOwner(LocalPlayer)
+                end)
+            end
+            
+            -- Simulate network lag patterns
+            if getgenv().DetectionEvasionEnabled then
+                task.wait(math.random(0.1, 0.3) / 10)
+            end
+        end
+    end)
+end
+
+function EnableCharacterBypass()
+    local RunService = game:GetService("RunService")
+    local Players = game:GetService("Players")
+    local LocalPlayer = Players.LocalPlayer
+    
+    local CharacterBypassConnection
+    CharacterBypassConnection = RunService.Heartbeat:Connect(function()
+        if not getgenv().CharacterBypassEnabled then
+            CharacterBypassConnection:Disconnect()
+            return
+        end
+        
+        local character = LocalPlayer.Character
+        if character then
+            local humanoid = character:FindFirstChild("Humanoid")
+            local rootPart = character:FindFirstChild("HumanoidRootPart")
+            
+            if humanoid and rootPart then
+                -- Bypass state checks
+                humanoid:ChangeState(Enum.HumanoidStateType.Running)
+                
+                -- Fake ground contact
+                if getgenv().Flying then
+                    -- Simulate occasional ground contact
+                    if math.random(1, 100) > 85 then
+                        humanoid:ChangeState(Enum.HumanoidStateType.RunningNoPhysics)
+                    end
+                end
+            end
+        end
+    end)
+end
+
+function EnableAntiTeleport()
+    local Players = game:GetService("Players")
+    local LocalPlayer = Players.LocalPlayer
+    
+    -- Hook teleport detection functions
+    local oldIndex = nil
+    oldIndex = hookmetamethod(game, "__index", function(self, key)
+        if tostring(key):lower():find("teleport") or tostring(key):lower():find("tp") then
+            return nil
+        end
+        return oldIndex(self, key)
+    end)
+    
+    -- Monitor for teleport checks
+    local character = LocalPlayer.Character
+    if character then
+        local rootPart = character:FindFirstChild("HumanoidRootPart")
+        if rootPart then
+            local lastPosition = rootPart.Position
+            
+            game:GetService("RunService").Heartbeat:Connect(function()
+                if not getgenv().AntiTeleportEnabled then return end
+                
+                local currentPosition = rootPart.Position
+                local distance = (currentPosition - lastPosition).Magnitude
+                
+                -- If large movement detected, smooth it out
+                if distance > 50 then
+                    -- Gradual interpolation to avoid teleport detection
+                    for i = 1, 10 do
+                        rootPart.CFrame = rootPart.CFrame:Lerp(
+                            CFrame.new(lastPosition:Lerp(currentPosition, i/10)),
+                            0.5
+                        )
+                        task.wait()
+                    end
+                end
+                
+                lastPosition = currentPosition
+            end)
+        end
+    end
+end
+
+-- E. MAIN FLY SYSTEM
+function CreateFlySystem()
+    local Players = game:GetService("Players")
+    local LocalPlayer = Players.LocalPlayer
+    local RunService = game:GetService("RunService")
+    local UserInputService = game:GetService("UserInputService")
+    
+    getgenv().Flying = false
+    getgenv().FlyConnection = nil
+    
+    local function StartFlying()
+        local character = LocalPlayer.Character
+        if not character then return end
+        
+        local humanoid = character:FindFirstChild("Humanoid")
+        local rootPart = character:FindFirstChild("HumanoidRootPart")
+        if not humanoid or not rootPart then return end
+        
+        getgenv().Flying = true
+        
+        -- Remove any existing body movers
+        for _, obj in pairs(rootPart:GetChildren()) do
+            if obj:IsA("BodyVelocity") or obj:IsA("BodyPosition") then
+                obj:Destroy()
+            end
+        end
+        
+        local bodyVelocity = Instance.new("BodyVelocity")
+        bodyVelocity.Velocity = Vector3.new(0, 0, 0)
+        bodyVelocity.MaxForce = Vector3.new(40000, 40000, 40000)
+        
+        local bodyGyro = Instance.new("BodyGyro")
+        bodyGyro.MaxTorque = Vector3.new(40000, 40000, 40000)
+        bodyGyro.P = 1000
+        bodyGyro.D = 50
+        
+        bodyVelocity.Parent = rootPart
+        bodyGyro.Parent = rootPart
+        
+        getgenv().FlyConnection = RunService.Heartbeat:Connect(function()
+            if not getgenv().Flying or not character or not rootPart then
+                getgenv().FlyConnection:Disconnect()
+                return
+            end
+            
+            bodyGyro.CFrame = rootPart.CFrame
+            
+            local moveDirection = Vector3.new(0, 0, 0)
+            
+            -- Movement controls
+            if UserInputService:IsKeyDown(Enum.KeyCode.W) then
+                moveDirection = moveDirection + rootPart.CFrame.LookVector
+            end
+            if UserInputService:IsKeyDown(Enum.KeyCode.S) then
+                moveDirection = moveDirection - rootPart.CFrame.LookVector
+            end
+            if UserInputService:IsKeyDown(Enum.KeyCode.A) then
+                moveDirection = moveDirection - rootPart.CFrame.RightVector
+            end
+            if UserInputService:IsKeyDown(Enum.KeyCode.D) then
+                moveDirection = moveDirection + rootPart.CFrame.RightVector
+            end
+            if UserInputService:IsKeyDown(Enum.KeyCode.Space) then
+                moveDirection = moveDirection + Vector3.new(0, 1, 0)
+            end
+            if UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then
+                moveDirection = moveDirection - Vector3.new(0, 1, 0)
+            end
+            
+            -- Apply movement with smoothing
+            if moveDirection.Magnitude > 0 then
+                moveDirection = moveDirection.Unit * getgenv().FlySpeed
+                if getgenv().SmoothMovementEnabled then
+                    bodyVelocity.Velocity = bodyVelocity.Velocity:Lerp(moveDirection, 0.3)
+                else
+                    bodyVelocity.Velocity = moveDirection
+                end
+            else
+                bodyVelocity.Velocity = Vector3.new(0, 0, 0)
+            end
+            
+            -- Fake gravity simulation
+            if getgenv().FakeGravityEnabled and moveDirection.Y == 0 then
+                bodyVelocity.Velocity = bodyVelocity.Velocity + Vector3.new(0, -2, 0)
+            end
+        end)
+    end
+    
+    local function StopFlying()
+        getgenv().Flying = false
+        if getgenv().FlyConnection then
+            getgenv().FlyConnection:Disconnect()
+        end
+        
+        local character = LocalPlayer.Character
+        if character then
+            local rootPart = character:FindFirstChild("HumanoidRootPart")
+            if rootPart then
+                for _, obj in pairs(rootPart:GetChildren()) do
+                    if obj:IsA("BodyVelocity") or obj:IsA("BodyPosition") or obj:IsA("BodyGyro") then
+                        obj:Destroy()
+                    end
+                end
+            end
+        end
+    end
+    
+    -- Keybind handler
+    UserInputService.InputBegan:Connect(function(input, gameProcessed)
+        if gameProcessed then return end
+        
+        if input.KeyCode == Enum.KeyCode[getgenv().FlyToggleKey or "F"] then
+            if getgenv().Flying then
+                StopFlying()
+                Rayfield:Notify({
+                    Title = "Fly System",
+                    Content = "Fly disabled",
+                    Duration = 2
+                })
+            else
+                StartFlying()
+                Rayfield:Notify({
+                    Title = "Fly System",
+                    Content = "Fly enabled - Use WASD, Space, Shift",
+                    Duration = 3
+                })
+            end
+        end
+    end)
+end
+
+-- F. INITIALIZATION
+SettingsTab:CreateButton({
+    Name = "Initialize Fly System",
+    Callback = function()
+        CreateFlySystem()
+        Rayfield:Notify({
+            Title = "Fly System",
+            Content = "Fly system initialized! Press " .. (getgenv().FlyToggleKey or "F") .. " to toggle",
+            Duration = 5
+        })
+    end,
+})
+
+-- Initialize global variables
+getgenv().FlySpeed = 50
+getgenv().FlyToggleKey = "F"
+getgenv().FlyMode = "CFrame"
+getgenv().FakeGravityEnabled = true
+getgenv().SmoothMovementEnabled = true
+getgenv().DetectionEvasionEnabled = true
+
+Rayfield:Notify({
+    Title = "Fly Detection Bypass Loaded",
+    Content = "Enable bypass methods and initialize fly system!",
+    Duration = 5,
+    Image = 4483362458
+})
