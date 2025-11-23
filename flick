@@ -1,13 +1,13 @@
--- Roblox Script with Colorful FOV and ESP
+-- Fully Fixed Roblox Script
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 local Window = Rayfield:CreateWindow({
-   Name = "dor dor dor",
-   LoadingTitle = ".",
-   LoadingSubtitle = "axel dor dor",
+   Name = "dor dor",
+   LoadingTitle = "ah ah ah",
+   LoadingSubtitle = "axel dor",
    ConfigurationSaving = {
       Enabled = true,
-      FolderName = "oooo",
+      FolderName = "FixedConfig",
       FileName = "Config.json"
    },
    KeySystem = false,
@@ -17,11 +17,11 @@ local Window = Rayfield:CreateWindow({
 local CombatTab = Window:CreateTab("Combat", 4483362458)
 
 local RagebotToggle = CombatTab:CreateToggle({
-   Name = "RageBot",
+   Name = "RageBot (Head->Body->Body)",
    CurrentValue = false,
    Flag = "RagebotEnabled",
    Callback = function(Value)
-       getgenv().Ragebot = Value
+       getgenv().RagebotEnabled = Value
    end,
 })
 
@@ -47,26 +47,13 @@ local FOVColorPicker = CombatTab:CreateColorPicker({
 
 local FOVSlider = CombatTab:CreateSlider({
    Name = "FOV Circle Size",
-   Range = {10, 200},
-   Increment = 5,
+   Range = {50, 300},
+   Increment = 10,
    Suffix = "pixels",
-   CurrentValue = 80,
+   CurrentValue = 120,
    Flag = "FOVSize",
    Callback = function(Value)
        getgenv().FOVSize = Value
-       updateFOVCircle()
-   end,
-})
-
-local FOVTransparency = CombatTab:CreateSlider({
-   Name = "FOV Transparency",
-   Range = {0, 1},
-   Increment = 0.1,
-   Suffix = "",
-   CurrentValue = 0.5,
-   Flag = "FOVTransparency",
-   Callback = function(Value)
-       getgenv().FOVTransparency = Value
        updateFOVCircle()
    end,
 })
@@ -79,7 +66,7 @@ local ESPToggle = VisualsTab:CreateToggle({
    CurrentValue = false,
    Flag = "ESPEnabled",
    Callback = function(Value)
-       getgenv().ESPBox = Value
+       getgenv().ESPEnabled = Value
        if Value then
            createESP()
        else
@@ -103,7 +90,7 @@ local TracerToggle = VisualsTab:CreateToggle({
    CurrentValue = false,
    Flag = "TracerEnabled",
    Callback = function(Value)
-       getgenv().Tracer = Value
+       getgenv().TracerEnabled = Value
        if Value then
            createTracers()
        else
@@ -112,30 +99,11 @@ local TracerToggle = VisualsTab:CreateToggle({
    end,
 })
 
-local TracerColorPicker = VisualsTab:CreateColorPicker({
-   Name = "Tracer Color",
-   Color = Color3.fromRGB(255, 255, 0),
-   Flag = "TracerColor",
-   Callback = function(Value)
-       getgenv().TracerColor = Value
-       updateTracerColors()
-   end
-})
-
-local TeamColorToggle = VisualsTab:CreateToggle({
-   Name = "Team-Based Colors",
-   CurrentValue = true,
-   Flag = "TeamColorsEnabled",
-   Callback = function(Value)
-       getgenv().TeamColors = Value
-       updateAllColors()
-   end,
-})
-
 -- FOV Circle Variables
 local FOVCircle = nil
+local screenCenter = Vector2.new()
 
--- Create FOV Circle Function
+-- Create centered FOV Circle
 function createFOVCircle()
     if FOVCircle then FOVCircle:Remove() end
     
@@ -144,16 +112,20 @@ function createFOVCircle()
     FOVCircle.Color = getgenv().FOVColor or Color3.fromRGB(0, 255, 0)
     FOVCircle.Thickness = 2
     FOVCircle.NumSides = 64
-    FOVCircle.Radius = getgenv().FOVSize or 80
+    FOVCircle.Radius = getgenv().FOVSize or 120
     FOVCircle.Filled = false
-    FOVCircle.Transparency = getgenv().FOVTransparency or 0.5
+    FOVCircle.Transparency = 1
     
-    -- Update FOV circle position
+    -- Set to screen center and keep it there
+    local viewportSize = workspace.CurrentCamera.ViewportSize
+    screenCenter = Vector2.new(viewportSize.X / 2, viewportSize.Y / 2)
+    FOVCircle.Position = screenCenter
+    
+    -- Keep circle centered
     game:GetService("RunService").RenderStepped:Connect(function()
         if FOVCircle then
-            local mouse = game.Players.LocalPlayer:GetMouse()
-            FOVCircle.Position = Vector2.new(mouse.X, mouse.Y + 36)
             FOVCircle.Visible = getgenv().ShowFOV or true
+            FOVCircle.Position = screenCenter -- Always stay centered
         end
     end)
 end
@@ -162,52 +134,147 @@ function updateFOVCircle()
     if FOVCircle then
         FOVCircle.Visible = getgenv().ShowFOV or true
         FOVCircle.Color = getgenv().FOVColor or Color3.fromRGB(0, 255, 0)
-        FOVCircle.Radius = getgenv().FOVSize or 80
-        FOVCircle.Transparency = getgenv().FOVTransparency or 0.5
+        FOVCircle.Radius = getgenv().FOVSize or 120
     else
         createFOVCircle()
     end
 end
 
--- ESP Variables
-local ESPObjects = {}
-local TracerObjects = {}
+-- RageBot Variables
+local aimSequence = {"Head", "UpperTorso", "LowerTorso"}
+local currentAimIndex = 1
+local lastAimTime = 0
 
--- Team color function
-function getPlayerColor(player)
-    if getgenv().TeamColors then
-        if game:GetService("Players").LocalPlayer.Team == player.Team then
-            return Color3.fromRGB(0, 255, 0) -- Green for teammates
-        else
-            return Color3.fromRGB(255, 0, 0) -- Red for enemies
-        end
-    else
-        return getgenv().ESPColor or Color3.fromRGB(255, 0, 0)
-    end
-end
-
--- Create ESP Function
-function createESP()
+-- Fixed RageBot Function
+function findBestTarget()
+    if not game.Players.LocalPlayer.Character then return nil end
+    if not game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then return nil end
+    
+    local bestTarget = nil
+    local closestDistance = getgenv().FOVSize or 120
+    local localPlayer = game.Players.LocalPlayer
+    local localPos = localPlayer.Character.HumanoidRootPart.Position
+    
     for _, player in pairs(game.Players:GetPlayers()) do
-        if player ~= game.Players.LocalPlayer and player.Character then
+        if player ~= localPlayer and player.Character then
             local character = player.Character
-            local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
+            local humanoid = character:FindFirstChild("Humanoid")
+            local rootPart = character:FindFirstChild("HumanoidRootPart")
             
-            if humanoidRootPart then
-                -- Create ESP Box
-                local highlight = Instance.new("Highlight")
-                highlight.Name = "ESP_" .. player.Name
-                highlight.Adornee = character
-                highlight.Parent = game.CoreGui
-                highlight.FillColor = getPlayerColor(player)
-                highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
-                highlight.FillTransparency = 0.3
-                highlight.OutlineTransparency = 0
-                
-                ESPObjects[player.Name] = highlight
+            if humanoid and humanoid.Health > 0 and rootPart then
+                -- Check if target is within FOV circle
+                local screenPoint, onScreen = workspace.CurrentCamera:WorldToViewportPoint(rootPart.Position)
+                if onScreen then
+                    local distanceFromCenter = (Vector2.new(screenPoint.X, screenPoint.Y) - screenCenter).Magnitude
+                    
+                    if distanceFromCenter <= (getgenv().FOVSize or 120) then
+                        local distance = (localPos - rootPart.Position).Magnitude
+                        if distance < closestDistance then
+                            closestDistance = distance
+                            bestTarget = player
+                        end
+                    end
+                end
             end
         end
     end
+    
+    return bestTarget
+end
+
+-- Working RageBot Aim Function
+function rageBotAim()
+    if not getgenv().RagebotEnabled then return end
+    if not game.Players.LocalPlayer.Character then return end
+    if not game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then return end
+    
+    local target = findBestTarget()
+    if target and target.Character then
+        local character = target.Character
+        
+        -- Get aim part based on sequence
+        local aimPartName = aimSequence[currentAimIndex]
+        local aimPart = character:FindFirstChild(aimPartName) or character:FindFirstChild("HumanoidRootPart")
+        
+        if aimPart then
+            -- Direct camera aiming (working method)
+            workspace.CurrentCamera.CFrame = CFrame.lookAt(
+                workspace.CurrentCamera.CFrame.Position,
+                aimPart.Position
+            )
+            
+            -- Cycle to next aim part
+            currentAimIndex = currentAimIndex % #aimSequence + 1
+        end
+    end
+end
+
+-- ESP Variables with better tracking
+local ESPObjects = {}
+local ESPConnections = {}
+
+-- Fixed ESP Function
+function createESP()
+    removeESP() -- Clean up first
+    
+    for _, player in pairs(game.Players:GetPlayers()) do
+        if player ~= game.Players.LocalPlayer then
+            setupPlayerESP(player)
+        end
+    end
+    
+    -- Listen for new players
+    ESPConnections.playerAdded = game.Players.PlayerAdded:Connect(function(player)
+        if getgenv().ESPEnabled then
+            setupPlayerESP(player)
+        end
+    end)
+    
+    -- Listen for character changes
+    ESPConnections.characterAdded = game.Players.PlayerAdded:Connect(function(player)
+        if getgenv().ESPEnabled and ESPObjects[player.Name] then
+            wait(1) -- Wait for character to load
+            setupPlayerESP(player)
+        end
+    end)
+end
+
+function setupPlayerESP(player)
+    if ESPObjects[player.Name] then
+        ESPObjects[player.Name]:Destroy()
+    end
+    
+    local function createESPForCharacter(character)
+        if not character then return end
+        
+        wait(0.5) -- Wait for character to fully load
+        
+        local highlight = Instance.new("Highlight")
+        highlight.Name = "ESP_" .. player.Name
+        highlight.Adornee = character
+        highlight.Parent = game.CoreGui
+        highlight.FillColor = getgenv().ESPColor or Color3.fromRGB(255, 0, 0)
+        highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+        highlight.FillTransparency = 0.3
+        highlight.OutlineTransparency = 0
+        highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+        
+        ESPObjects[player.Name] = highlight
+        
+        -- Update ESP when character changes
+        character:WaitForChild("Humanoid").Died:Connect(function()
+            if ESPObjects[player.Name] then
+                ESPObjects[player.Name]:Destroy()
+                ESPObjects[player.Name] = nil
+            end
+        end)
+    end
+    
+    if player.Character then
+        createESPForCharacter(player.Character)
+    end
+    
+    player.CharacterAdded:Connect(createESPForCharacter)
 end
 
 function removeESP()
@@ -217,59 +284,71 @@ function removeESP()
         end
     end
     ESPObjects = {}
+    
+    for _, connection in pairs(ESPConnections) do
+        connection:Disconnect()
+    end
+    ESPConnections = {}
 end
 
 function updateESPColors()
     for playerName, highlight in pairs(ESPObjects) do
         if highlight then
-            local player = game.Players:FindFirstChild(playerName)
-            if player then
-                highlight.FillColor = getPlayerColor(player)
-            end
+            highlight.FillColor = getgenv().ESPColor or Color3.fromRGB(255, 0, 0)
         end
     end
 end
 
--- Create Tracers Function
+-- Tracer Variables
+local TracerObjects = {}
+
 function createTracers()
+    removeTracers()
+    
     for _, player in pairs(game.Players:GetPlayers()) do
         if player ~= game.Players.LocalPlayer and player.Character then
-            local character = player.Character
-            local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
-            
-            if humanoidRootPart then
-                local line = Drawing.new("Line")
-                line.Visible = true
-                line.Color = getgenv().TracerColor or Color3.fromRGB(255, 255, 0)
-                line.Thickness = 2
-                line.Transparency = 1
-                
-                TracerObjects[player.Name] = line
-                
-                -- Update tracer position
-                game:GetService("RunService").RenderStepped:Connect(function()
-                    if getgenv().Tracer and line and humanoidRootPart and game.Players.LocalPlayer.Character then
-                        local localRoot = game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-                        if localRoot then
-                            local screenPoint, onScreen = workspace.CurrentCamera:WorldToViewportPoint(humanoidRootPart.Position)
-                            local localScreenPoint = workspace.CurrentCamera:WorldToViewportPoint(localRoot.Position)
-                            
-                            if onScreen then
-                                line.From = Vector2.new(localScreenPoint.X, localScreenPoint.Y)
-                                line.To = Vector2.new(screenPoint.X, screenPoint.Y)
-                                line.Visible = true
-                                line.Color = getgenv().TeamColors and getPlayerColor(player) or getgenv().TracerColor
-                            else
-                                line.Visible = false
-                            end
-                        end
-                    else
-                        line.Visible = false
-                    end
-                end)
-            end
+            setupPlayerTracer(player)
         end
     end
+end
+
+function setupPlayerTracer(player)
+    if TracerObjects[player.Name] then
+        TracerObjects[player.Name]:Remove()
+    end
+    
+    local line = Drawing.new("Line")
+    line.Visible = false
+    line.Color = getgenv().ESPColor or Color3.fromRGB(255, 255, 0)
+    line.Thickness = 2
+    line.Transparency = 1
+    
+    TracerObjects[player.Name] = line
+    
+    -- Update tracer position
+    game:GetService("RunService").RenderStepped:Connect(function()
+        if getgenv().TracerEnabled and player.Character and game.Players.LocalPlayer.Character then
+            local rootPart = player.Character:FindFirstChild("HumanoidRootPart")
+            local localRoot = game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+            
+            if rootPart and localRoot then
+                local screenPoint, onScreen = workspace.CurrentCamera:WorldToViewportPoint(rootPart.Position)
+                local localScreenPoint = workspace.CurrentCamera:WorldToViewportPoint(localRoot.Position)
+                
+                if onScreen then
+                    line.From = Vector2.new(localScreenPoint.X, localScreenPoint.Y)
+                    line.To = Vector2.new(screenPoint.X, screenPoint.Y)
+                    line.Visible = true
+                else
+                    line.Visible = false
+                end
+            else
+                line.Visible = false
+            end
+        else
+            line.Visible = false
+        end
+    end)
 end
 
 function removeTracers()
@@ -281,34 +360,24 @@ function removeTracers()
     TracerObjects = {}
 end
 
-function updateTracerColors()
-    for playerName, line in pairs(TracerObjects) do
-        if line then
-            local player = game.Players:FindFirstChild(playerName)
-            if player then
-                line.Color = getgenv().TeamColors and getPlayerColor(player) or getgenv().TracerColor
-            end
-        end
-    end
-end
-
-function updateAllColors()
-    updateESPColors()
-    updateTracerColors()
-end
-
--- Initialize FOV Circle
-createFOVCircle()
-
--- Player handlers
-game.Players.PlayerAdded:Connect(function(player)
-    if getgenv().ESPBox then createESP() end
-    if getgenv().Tracer then createTracers() end
+-- Main loops
+game:GetService("RunService").RenderStepped:Connect(function()
+    rageBotAim() -- RageBot always runs when enabled
 end)
 
-game.Players.PlayerRemoving:Connect(function(player)
-    if ESPObjects[player.Name] then ESPObjects[player.Name]:Destroy() end
-    if TracerObjects[player.Name] then TracerObjects[player.Name]:Remove() end
+-- Initialize
+createFOVCircle()
+
+-- Clean up on script end
+game:GetService("Players").PlayerRemoving:Connect(function(player)
+    if ESPObjects[player.Name] then
+        ESPObjects[player.Name]:Destroy()
+        ESPObjects[player.Name] = nil
+    end
+    if TracerObjects[player.Name] then
+        TracerObjects[player.Name]:Remove()
+        TracerObjects[player.Name] = nil
+    end
 end)
 
 Rayfield:LoadConfiguration()
