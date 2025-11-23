@@ -1,13 +1,13 @@
--- Fully Fixed Roblox Script
+-- Optimized Roblox Script
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 local Window = Rayfield:CreateWindow({
-   Name = "dor dor",
-   LoadingTitle = "ah ah ah",
-   LoadingSubtitle = "axel dor",
+   Name = "tembak tembak dor dor",
+   LoadingTitle = "dor dor",
+   LoadingSubtitle = "axel",
    ConfigurationSaving = {
       Enabled = true,
-      FolderName = "FixedConfig",
+      FolderName = "OptimizedConfig",
       FileName = "Config.json"
    },
    KeySystem = false,
@@ -17,11 +17,33 @@ local Window = Rayfield:CreateWindow({
 local CombatTab = Window:CreateTab("Combat", 4483362458)
 
 local RagebotToggle = CombatTab:CreateToggle({
-   Name = "RageBot (Head->Body->Body)",
+   Name = "RageBot",
    CurrentValue = false,
    Flag = "RagebotEnabled",
    Callback = function(Value)
        getgenv().RagebotEnabled = Value
+   end,
+})
+
+local AimPartDropdown = CombatTab:CreateDropdown({
+   Name = "Aim Part",
+   Options = {"Head", "UpperTorso", "LowerTorso", "HumanoidRootPart", "Random"},
+   CurrentOption = "Head",
+   Flag = "AimPart",
+   Callback = function(Option)
+       getgenv().AimPart = Option
+   end,
+})
+
+local SmoothingSlider = CombatTab:CreateSlider({
+   Name = "Aim Smoothing",
+   Range = {1, 20},
+   Increment = 1,
+   Suffix = "",
+   CurrentValue = 5,
+   Flag = "AimSmoothing",
+   Callback = function(Value)
+       getgenv().AimSmoothing = Value
    end,
 })
 
@@ -33,16 +55,6 @@ local FOVToggle = CombatTab:CreateToggle({
        getgenv().ShowFOV = Value
        updateFOVCircle()
    end,
-})
-
-local FOVColorPicker = CombatTab:CreateColorPicker({
-   Name = "FOV Circle Color",
-   Color = Color3.fromRGB(0, 255, 0),
-   Flag = "FOVColor",
-   Callback = function(Value)
-       getgenv().FOVColor = Value
-       updateFOVCircle()
-   end
 })
 
 local FOVSlider = CombatTab:CreateSlider({
@@ -75,14 +87,16 @@ local ESPToggle = VisualsTab:CreateToggle({
    end,
 })
 
-local ESPColorPicker = VisualsTab:CreateColorPicker({
-   Name = "ESP Box Color",
-   Color = Color3.fromRGB(255, 0, 0),
-   Flag = "ESPColor",
+local ESPUpdateSlider = VisualsTab:CreateSlider({
+   Name = "ESP Update Rate",
+   Range = {1, 10},
+   Increment = 1,
+   Suffix = "Hz",
+   CurrentValue = 5,
+   Flag = "ESPUpdateRate",
    Callback = function(Value)
-       getgenv().ESPColor = Value
-       updateESPColors()
-   end
+       getgenv().ESPUpdateRate = Value
+   end,
 })
 
 local TracerToggle = VisualsTab:CreateToggle({
@@ -99,70 +113,97 @@ local TracerToggle = VisualsTab:CreateToggle({
    end,
 })
 
--- FOV Circle Variables
+-- Performance Tab
+local PerformanceTab = Window:CreateTab("Performance", 4483362458)
+
+local DisableRenderingToggle = PerformanceTab:CreateToggle({
+   Name = "Disable Rendering (FPS Boost)",
+   CurrentValue = false,
+   Flag = "DisableRendering",
+   Callback = function(Value)
+       getgenv().DisableRendering = Value
+       toggleRendering()
+   end,
+})
+
+local AntiLagToggle = PerformanceTab:CreateToggle({
+   Name = "Anti-Lag Mode",
+   CurrentValue = false,
+   Flag = "AntiLagEnabled",
+   Callback = function(Value)
+       getgenv().AntiLag = Value
+       toggleAntiLag()
+   end,
+})
+
+local GraphicsSlider = PerformanceTab:CreateSlider({
+   Name = "Graphics Quality",
+   Range = {1, 10},
+   Increment = 1,
+   Suffix = "",
+   CurrentValue = 7,
+   Flag = "GraphicsQuality",
+   Callback = function(Value)
+       setGraphicsQuality(Value)
+   end,
+})
+
+-- FOV Circle
 local FOVCircle = nil
 local screenCenter = Vector2.new()
 
--- Create centered FOV Circle
 function createFOVCircle()
     if FOVCircle then FOVCircle:Remove() end
     
     FOVCircle = Drawing.new("Circle")
     FOVCircle.Visible = getgenv().ShowFOV or true
-    FOVCircle.Color = getgenv().FOVColor or Color3.fromRGB(0, 255, 0)
+    FOVCircle.Color = Color3.fromRGB(0, 255, 0)
     FOVCircle.Thickness = 2
-    FOVCircle.NumSides = 64
+    FOVCircle.NumSides = 32 -- Reduced for performance
     FOVCircle.Radius = getgenv().FOVSize or 120
     FOVCircle.Filled = false
     FOVCircle.Transparency = 1
     
-    -- Set to screen center and keep it there
     local viewportSize = workspace.CurrentCamera.ViewportSize
     screenCenter = Vector2.new(viewportSize.X / 2, viewportSize.Y / 2)
     FOVCircle.Position = screenCenter
-    
-    -- Keep circle centered
-    game:GetService("RunService").RenderStepped:Connect(function()
-        if FOVCircle then
-            FOVCircle.Visible = getgenv().ShowFOV or true
-            FOVCircle.Position = screenCenter -- Always stay centered
-        end
-    end)
 end
 
 function updateFOVCircle()
     if FOVCircle then
         FOVCircle.Visible = getgenv().ShowFOV or true
-        FOVCircle.Color = getgenv().FOVColor or Color3.fromRGB(0, 255, 0)
         FOVCircle.Radius = getgenv().FOVSize or 120
-    else
-        createFOVCircle()
     end
 end
 
--- RageBot Variables
-local aimSequence = {"Head", "UpperTorso", "LowerTorso"}
-local currentAimIndex = 1
-local lastAimTime = 0
+-- Stable RageBot Function
+function getAimPart(character)
+    local aimPart = getgenv().AimPart or "Head"
+    
+    if aimPart == "Random" then
+        local parts = {"Head", "UpperTorso", "LowerTorso", "HumanoidRootPart"}
+        aimPart = parts[math.random(1, #parts)]
+    end
+    
+    return character:FindFirstChild(aimPart) or character:FindFirstChild("HumanoidRootPart")
+end
 
--- Fixed RageBot Function
 function findBestTarget()
     if not game.Players.LocalPlayer.Character then return nil end
-    if not game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then return nil end
+    local localRoot = game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+    if not localRoot then return nil end
     
     local bestTarget = nil
     local closestDistance = getgenv().FOVSize or 120
-    local localPlayer = game.Players.LocalPlayer
-    local localPos = localPlayer.Character.HumanoidRootPart.Position
+    local localPos = localRoot.Position
     
     for _, player in pairs(game.Players:GetPlayers()) do
-        if player ~= localPlayer and player.Character then
+        if player ~= game.Players.LocalPlayer and player.Character then
             local character = player.Character
             local humanoid = character:FindFirstChild("Humanoid")
             local rootPart = character:FindFirstChild("HumanoidRootPart")
             
             if humanoid and humanoid.Health > 0 and rootPart then
-                -- Check if target is within FOV circle
                 local screenPoint, onScreen = workspace.CurrentCamera:WorldToViewportPoint(rootPart.Position)
                 if onScreen then
                     local distanceFromCenter = (Vector2.new(screenPoint.X, screenPoint.Y) - screenCenter).Magnitude
@@ -182,58 +223,63 @@ function findBestTarget()
     return bestTarget
 end
 
--- Working RageBot Aim Function
+-- Smooth aiming function
+function smoothAim(targetPosition)
+    local camera = workspace.CurrentCamera
+    local currentCFrame = camera.CFrame
+    local targetCFrame = CFrame.lookAt(currentCFrame.Position, targetPosition)
+    
+    local smoothing = getgenv().AimSmoothing or 5
+    local smoothFactor = 1 / smoothing
+    
+    return currentCFrame:Lerp(targetCFrame, smoothFactor)
+end
+
 function rageBotAim()
     if not getgenv().RagebotEnabled then return end
     if not game.Players.LocalPlayer.Character then return end
-    if not game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then return end
     
     local target = findBestTarget()
     if target and target.Character then
-        local character = target.Character
-        
-        -- Get aim part based on sequence
-        local aimPartName = aimSequence[currentAimIndex]
-        local aimPart = character:FindFirstChild(aimPartName) or character:FindFirstChild("HumanoidRootPart")
-        
+        local aimPart = getAimPart(target.Character)
         if aimPart then
-            -- Direct camera aiming (working method)
-            workspace.CurrentCamera.CFrame = CFrame.lookAt(
-                workspace.CurrentCamera.CFrame.Position,
-                aimPart.Position
-            )
-            
-            -- Cycle to next aim part
-            currentAimIndex = currentAimIndex % #aimSequence + 1
+            local camera = workspace.CurrentCamera
+            local newCFrame = smoothAim(aimPart.Position)
+            camera.CFrame = newCFrame
         end
     end
 end
 
--- ESP Variables with better tracking
+-- Optimized ESP System
 local ESPObjects = {}
-local ESPConnections = {}
+local ESPUpdateConnection = nil
+local lastESPUpdate = 0
 
--- Fixed ESP Function
 function createESP()
-    removeESP() -- Clean up first
+    removeESP()
     
+    -- Create ESP for existing players
     for _, player in pairs(game.Players:GetPlayers()) do
         if player ~= game.Players.LocalPlayer then
             setupPlayerESP(player)
         end
     end
     
-    -- Listen for new players
-    ESPConnections.playerAdded = game.Players.PlayerAdded:Connect(function(player)
-        if getgenv().ESPEnabled then
-            setupPlayerESP(player)
+    -- Optimized update loop
+    ESPUpdateConnection = game:GetService("RunService").RenderStepped:Connect(function()
+        local now = tick()
+        local updateRate = getgenv().ESPUpdateRate or 5
+        local updateInterval = 1 / updateRate
+        
+        if now - lastESPUpdate >= updateInterval then
+            updateESP()
+            lastESPUpdate = now
         end
     end)
     
-    -- Listen for character changes
-    ESPConnections.characterAdded = game.Players.PlayerAdded:Connect(function(player)
-        if getgenv().ESPEnabled and ESPObjects[player.Name] then
-            wait(1) -- Wait for character to load
+    -- Player handlers
+    game.Players.PlayerAdded:Connect(function(player)
+        if getgenv().ESPEnabled then
             setupPlayerESP(player)
         end
     end)
@@ -247,27 +293,23 @@ function setupPlayerESP(player)
     local function createESPForCharacter(character)
         if not character then return end
         
-        wait(0.5) -- Wait for character to fully load
+        -- Wait for character to fully load
+        wait(0.3)
         
         local highlight = Instance.new("Highlight")
         highlight.Name = "ESP_" .. player.Name
         highlight.Adornee = character
         highlight.Parent = game.CoreGui
-        highlight.FillColor = getgenv().ESPColor or Color3.fromRGB(255, 0, 0)
+        highlight.FillColor = Color3.fromRGB(255, 0, 0)
         highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
-        highlight.FillTransparency = 0.3
+        highlight.FillTransparency = 0.4
         highlight.OutlineTransparency = 0
         highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
         
-        ESPObjects[player.Name] = highlight
-        
-        -- Update ESP when character changes
-        character:WaitForChild("Humanoid").Died:Connect(function()
-            if ESPObjects[player.Name] then
-                ESPObjects[player.Name]:Destroy()
-                ESPObjects[player.Name] = nil
-            end
-        end)
+        ESPObjects[player.Name] = {
+            Highlight = highlight,
+            Player = player
+        }
     end
     
     if player.Character then
@@ -277,36 +319,43 @@ function setupPlayerESP(player)
     player.CharacterAdded:Connect(createESPForCharacter)
 end
 
+function updateESP()
+    for name, espData in pairs(ESPObjects) do
+        if espData.Highlight and espData.Player and espData.Player.Character then
+            local character = espData.Player.Character
+            local humanoid = character:FindFirstChild("Humanoid")
+            
+            if humanoid and humanoid.Health > 0 then
+                espData.Highlight.Enabled = true
+            else
+                espData.Highlight.Enabled = false
+            end
+        end
+    end
+end
+
 function removeESP()
-    for playerName, highlight in pairs(ESPObjects) do
-        if highlight then
-            highlight:Destroy()
+    for name, espData in pairs(ESPObjects) do
+        if espData.Highlight then
+            espData.Highlight:Destroy()
         end
     end
     ESPObjects = {}
     
-    for _, connection in pairs(ESPConnections) do
-        connection:Disconnect()
-    end
-    ESPConnections = {}
-end
-
-function updateESPColors()
-    for playerName, highlight in pairs(ESPObjects) do
-        if highlight then
-            highlight.FillColor = getgenv().ESPColor or Color3.fromRGB(255, 0, 0)
-        end
+    if ESPUpdateConnection then
+        ESPUpdateConnection:Disconnect()
+        ESPUpdateConnection = nil
     end
 end
 
--- Tracer Variables
+-- Tracer System
 local TracerObjects = {}
 
 function createTracers()
     removeTracers()
     
     for _, player in pairs(game.Players:GetPlayers()) do
-        if player ~= game.Players.LocalPlayer and player.Character then
+        if player ~= game.Players.LocalPlayer then
             setupPlayerTracer(player)
         end
     end
@@ -319,15 +368,25 @@ function setupPlayerTracer(player)
     
     local line = Drawing.new("Line")
     line.Visible = false
-    line.Color = getgenv().ESPColor or Color3.fromRGB(255, 255, 0)
-    line.Thickness = 2
+    line.Color = Color3.fromRGB(255, 255, 0)
+    line.Thickness = 1 -- Thinner for performance
     line.Transparency = 1
     
     TracerObjects[player.Name] = line
     
-    -- Update tracer position
+    -- Less frequent updates for tracers
+    local lastTracerUpdate = 0
     game:GetService("RunService").RenderStepped:Connect(function()
-        if getgenv().TracerEnabled and player.Character and game.Players.LocalPlayer.Character then
+        if not getgenv().TracerEnabled then
+            line.Visible = false
+            return
+        end
+        
+        local now = tick()
+        if now - lastTracerUpdate < 0.1 then return end -- Update every 100ms
+        lastTracerUpdate = now
+        
+        if player.Character and game.Players.LocalPlayer.Character then
             local rootPart = player.Character:FindFirstChild("HumanoidRootPart")
             local localRoot = game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
             
@@ -352,7 +411,7 @@ function setupPlayerTracer(player)
 end
 
 function removeTracers()
-    for playerName, line in pairs(TracerObjects) do
+    for name, line in pairs(TracerObjects) do
         if line then
             line:Remove()
         end
@@ -360,18 +419,69 @@ function removeTracers()
     TracerObjects = {}
 end
 
+-- Performance Features
+local RenderingConnection = nil
+local AntiLagConnection = nil
+
+function toggleRendering()
+    if RenderingConnection then
+        RenderingConnection:Disconnect()
+        RenderingConnection = nil
+    end
+    
+    if getgenv().DisableRendering then
+        RenderingConnection = game:GetService("RunService").RenderStepped:Connect(function()
+            game:GetService("RunService"):Set3dRenderingEnabled(false)
+        end)
+    else
+        game:GetService("RunService"):Set3dRenderingEnabled(true)
+    end
+end
+
+function toggleAntiLag()
+    if AntiLagConnection then
+        AntiLagConnection:Disconnect()
+        AntiLagConnection = nil
+    end
+    
+    if getgenv().AntiLag then
+        -- Reduce graphics settings
+        setGraphicsQuality(1)
+        
+        -- Disable unnecessary services
+        game:GetService("Lighting").GlobalShadows = false
+        game:GetService("Lighting").FogEnd = 100000
+        
+        -- Reduce particle effects
+        for _, effect in pairs(game:GetService("Lighting"):GetChildren()) do
+            if effect:IsA("ParticleEmitter") or effect:IsA("Trail") then
+                effect.Enabled = false
+            end
+        end
+    else
+        setGraphicsQuality(getgenv().GraphicsQuality or 7)
+        game:GetService("Lighting").GlobalShadows = true
+    end
+end
+
+function setGraphicsQuality(level)
+    local settings = game:GetService("UserGameSettings")
+    settings.SavedQualityLevel = level
+    settings:SetQualityLevel(level)
+end
+
 -- Main loops
 game:GetService("RunService").RenderStepped:Connect(function()
-    rageBotAim() -- RageBot always runs when enabled
+    rageBotAim()
 end)
 
 -- Initialize
 createFOVCircle()
 
--- Clean up on script end
+-- Cleanup
 game:GetService("Players").PlayerRemoving:Connect(function(player)
     if ESPObjects[player.Name] then
-        ESPObjects[player.Name]:Destroy()
+        ESPObjects[player.Name].Highlight:Destroy()
         ESPObjects[player.Name] = nil
     end
     if TracerObjects[player.Name] then
