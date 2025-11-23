@@ -1,469 +1,221 @@
+-- Roblox Exploit Script with Rayfield UI
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+local CurrentAimIndex = 1
+local AimSequence = {"Head", "UpperTorso", "LowerTorso"}
 
 local Window = Rayfield:CreateWindow({
-    Name = "Flick Rage Bot",
-    LoadingTitle = "Flick Rage Bot",
-    LoadingSubtitle = "by axel",
-    ConfigurationSaving = {
-        Enabled = true,
-        FolderName = "FlickRageBot",
-        FileName = "Config"
-    },
-    Discord = {
-        Enabled = false,
-        Invite = "noinvite",
-        RememberJoins = true
-    },
-    KeySystem = false,
+   Name = "aimbot",
+   LoadingTitle = ".",
+   LoadingSubtitle = "by axel",
+   ConfigurationSaving = {
+      Enabled = true,
+      FolderName = "aimbotxel",
+      FileName = "Config.json"
+   },
+   Discord = {
+      Enabled = false,
+      Invite = "noinvite",
+      RememberJoins = true
+   },
+   KeySystem = false,
 })
 
+-- Main Tab
 local MainTab = Window:CreateTab("Combat", 4483362458)
-local VisualTab = Window:CreateTab("Visual", 4483362458)
 
-getgenv().RageBot = {
-    Active = false,
-    Connections = {}
-}
+-- Aimbot Section
+local AimbotSection = MainTab:CreateSection("Aimbot")
 
--- RAGE BOT FEATURES
-local RageSection = MainTab:CreateSection("Rage Bot")
-
-local RageToggle = MainTab:CreateToggle({
-    Name = "Rage Bot",
-    CurrentValue = false,
-    Flag = "RageEnabled",
-    Callback = function(Value)
-        getgenv().RageBot.Enabled = Value
-        if Value then
-            StartRageBot()
-        else
-            StopRageBot()
-        end
-    end,
+local AimbotToggle = MainTab:CreateToggle({
+   Name = "Aimbot",
+   CurrentValue = false,
+   Flag = "AimbotEnabled",
+   Callback = function(Value)
+       getgenv().Aimbot = Value
+   end,
 })
 
-local SilentAimToggle = MainTab:CreateToggle({
-    Name = "Silent Aim",
-    CurrentValue = false,
-    Flag = "SilentAim",
-    Callback = function(Value)
-        getgenv().SilentAim = Value
-    end,
+local RagebotToggle = MainTab:CreateToggle({
+   Name = "RageBot (Head->Body->Body)",
+   CurrentValue = false,
+   Flag = "RagebotEnabled",
+   Callback = function(Value)
+       getgenv().Ragebot = Value
+   end,
 })
 
-local AutoShoot = MainTab:CreateToggle({
-    Name = "Auto Shoot",
-    CurrentValue = false,
-    Flag = "AutoShoot",
-    Callback = function(Value)
-        getgenv().AutoShoot = Value
-    end,
+local FOVSlider = MainTab:CreateSlider({
+   Name = "Aimbot FOV",
+   Range = {0, 360},
+   Increment = 5,
+   Suffix = "degrees",
+   CurrentValue = 50,
+   Flag = "AimbotFOV",
+   Callback = function(Value)
+       getgenv().AimbotFOV = Value
+   end,
 })
 
-local FlickSpeed = MainTab:CreateSlider({
-    Name = "Flick Speed",
-    Range = {0.1, 5},
-    Increment = 0.1,
-    Suffix = "s",
-    CurrentValue = 1,
-    Flag = "FlickSpeed",
-    Callback = function(Value)
-        getgenv().FlickSpeed = Value
-    end,
+-- Visuals Tab
+local VisualsTab = Window:CreateTab("Visuals", 4483362458)
+
+local ESPToggle = VisualsTab:CreateToggle({
+   Name = "ESP Box",
+   CurrentValue = false,
+   Flag = "ESPEnabled",
+   Callback = function(Value)
+       getgenv().ESPBox = Value
+       updateESP()
+   end,
 })
 
-local TargetPart = MainTab:CreateDropdown({
-    Name = "Target Part",
-    Options = {"Head", "HumanoidRootPart", "Torso"},
-    CurrentOption = "Head",
-    Flag = "TargetPart",
-    Callback = function(Option)
-        getgenv().TargetPart = Option
-    end,
+local TracerToggle = VisualsTab:CreateToggle({
+   Name = "Tracer",
+   CurrentValue = false,
+   Flag = "TracerEnabled",
+   Callback = function(Value)
+       getgenv().Tracer = Value
+       updateTracers()
+   end,
 })
 
-local FOVSize = MainTab:CreateSlider({
-    Name = "Aim FOV Size",
-    Range = {10, 500},
-    Increment = 10,
-    Suffix = "px",
-    CurrentValue = 100,
-    Flag = "FOVSize",
-    Callback = function(Value)
-        getgenv().FOVSize = Value
-        UpdateFOVCircle()
-    end,
+local InfoToggle = VisualsTab:CreateToggle({
+   Name = "Player Info",
+   CurrentValue = false,
+   Flag = "InfoEnabled",
+   Callback = function(Value)
+       getgenv().PlayerInfo = Value
+       updatePlayerInfo()
+   end,
 })
 
-local FOVColor = MainTab:CreateColorPicker({
-    Name = "FOV Color",
-    Color = Color3.fromRGB(255, 0, 0),
-    Flag = "FOVColor",
-    Callback = function(Color)
-        getgenv().FOVColor = Color
-        UpdateFOVCircle()
-    end
+local ChamsToggle = VisualsTab:CreateToggle({
+   Name = "Wallhack Chams",
+   CurrentValue = false,
+   Flag = "ChamsEnabled",
+   Callback = function(Value)
+       getgenv().Wallhack = Value
+       updateChams()
+   end,
 })
 
-local ShowFOV = MainTab:CreateToggle({
-    Name = "Show FOV Circle",
-    CurrentValue = true,
-    Flag = "ShowFOV",
-    Callback = function(Value)
-        getgenv().ShowFOV = Value
-        UpdateFOVCircle()
-    end,
+-- Movement Tab
+local MovementTab = Window:CreateTab("Movement", 4483362458)
+
+local NoclipToggle = MovementTab:CreateToggle({
+   Name = "Noclip",
+   CurrentValue = false,
+   Flag = "NoclipEnabled",
+   Callback = function(Value)
+       getgenv().Noclip = Value
+       if Value then
+           noclipLoop()
+       end
+   end,
 })
 
--- ESP FEATURES
-local ESPSection = VisualTab:CreateSection("ESP")
-
-local ESPToggle = VisualTab:CreateToggle({
-    Name = "ESP",
-    CurrentValue = false,
-    Flag = "ESPEnabled",
-    Callback = function(Value)
-        getgenv().ESPEnabled = Value
-        if Value then
-            StartESP()
-        else
-            StopESP()
-        end
-    end,
-})
-
-local BoxESP = VisualTab:CreateToggle({
-    Name = "Box ESP",
-    CurrentValue = false,
-    Flag = "BoxESP",
-    Callback = function(Value)
-        getgenv().BoxESP = Value
-        if getgenv().ESPEnabled then
-            StopESP()
-            StartESP()
-        end
-    end,
-})
-
-local TracerESP = VisualTab:CreateToggle({
-    Name = "Tracer ESP",
-    CurrentValue = false,
-    Flag = "TracerESP",
-    Callback = function(Value)
-        getgenv().TracerESP = Value
-        if getgenv().ESPEnabled then
-            StopESP()
-            StartESP()
-        end
-    end,
-})
-
-local NameESP = VisualTab:CreateToggle({
-    Name = "Name ESP",
-    CurrentValue = false,
-    Flag = "NameESP",
-    Callback = function(Value)
-        getgenv().NameESP = Value
-        if getgenv().ESPEnabled then
-            StopESP()
-            StartESP()
-        end
-    end,
-})
-
-local ESPColor = VisualTab:CreateColorPicker({
-    Name = "ESP Color",
-    Color = Color3.fromRGB(255, 0, 0),
-    Flag = "ESPColor",
-    Callback = function(Color)
-        getgenv().ESPColor = Color
-        if getgenv().ESPEnabled then
-            StopESP()
-            StartESP()
-        end
-    end
-})
-
--- FOV CIRCLE
-local FOVCircle = nil
-
-function CreateFOVCircle()
-    if FOVCircle then FOVCircle:Remove() end
+-- Aimbot Function
+function findBestTarget()
+    local closestPlayer = nil
+    local shortestDistance = getgenv().AimbotFOV or 50
+    local localPlayer = game.Players.LocalPlayer
+    local mouse = game.Players.LocalPlayer:GetMouse()
     
-    local circle = Drawing.new("Circle")
-    circle.Visible = getgenv().ShowFOV or true
-    circle.Radius = getgenv().FOVSize or 100
-    circle.Color = getgenv().FOVColor or Color3.fromRGB(255, 0, 0)
-    circle.Thickness = 2
-    circle.NumSides = 100
-    circle.Filled = false
-    circle.Position = Vector2.new(workspace.CurrentCamera.ViewportSize.X / 2, workspace.CurrentCamera.ViewportSize.Y / 2)
-    
-    FOVCircle = circle
-end
-
-function UpdateFOVCircle()
-    if FOVCircle then
-        FOVCircle.Visible = getgenv().ShowFOV or true
-        FOVCircle.Radius = getgenv().FOVSize or 100
-        FOVCircle.Color = getgenv().FOVColor or Color3.fromRGB(255, 0, 0)
-        FOVCircle.Position = Vector2.new(workspace.CurrentCamera.ViewportSize.X / 2, workspace.CurrentCamera.ViewportSize.Y / 2)
-    end
-end
-
--- RAGE BOT FUNCTIONS
-function StartRageBot()
-    local Players = game:GetService("Players")
-    local LocalPlayer = Players.LocalPlayer
-    local RunService = game:GetService("RunService")
-    
-    getgenv().RageBot.Active = true
-    
-    local function IsInFOV(position)
-        if not getgenv().ShowFOV then return true end
-        
-        local camera = workspace.CurrentCamera
-        local screenPoint = camera:WorldToViewportPoint(position)
-        local center = Vector2.new(camera.ViewportSize.X / 2, camera.ViewportSize.Y / 2)
-        local mousePos = Vector2.new(screenPoint.X, screenPoint.Y)
-        local distance = (mousePos - center).Magnitude
-        
-        return distance <= (getgenv().FOVSize or 100)
-    end
-    
-    local function FindBestTarget()
-        local closest = nil
-        local closestDistance = math.huge
-        
-        for _, player in pairs(Players:GetPlayers()) do
-            if player ~= LocalPlayer and player.Character then
-                local character = player.Character
-                local humanoid = character:FindFirstChild("Humanoid")
-                local targetPart = character:FindFirstChild(getgenv().TargetPart or "Head")
-                
-                if humanoid and humanoid.Health > 0 and targetPart then
-                    if IsInFOV(targetPart.Position) then
-                        local localRoot = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-                        if localRoot then
-                            local distance = (targetPart.Position - localRoot.Position).Magnitude
-                            if distance < closestDistance then
-                                closestDistance = distance
-                                closest = player
-                            end
-                        end
-                    end
-                end
-            end
-        end
-        
-        return closest
-    end
-    
-    local function SimulateMouseClick()
-        if getgenv().AutoShoot then
-            local tool = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Tool")
-            if tool then
-                for _, v in pairs(tool:GetDescendants()) do
-                    if v:IsA("RemoteEvent") or v:IsA("RemoteFunction") then
-                        pcall(function()
-                            v:FireServer()
-                        end)
-                    end
-                end
-                pcall(function()
-                    tool:Activate()
-                end)
-            end
-        end
-    end
-    
-    local connection = RunService.Heartbeat:Connect(function()
-        if not getgenv().RageBot.Enabled then return end
-        
-        local target = FindBestTarget()
-        if target and target.Character then
-            local targetPart = target.Character:FindFirstChild(getgenv().TargetPart or "Head")
-            local camera = workspace.CurrentCamera
+    for _, player in pairs(game.Players:GetPlayers()) do
+        if player ~= localPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+            local character = player.Character
+            local screenPoint, visible = workspace.CurrentCamera:WorldToViewportPoint(character.HumanoidRootPart.Position)
             
-            if targetPart and camera then
-                if getgenv().SilentAim then
-                    -- Silent Aim (only modifies bullet trajectory)
-                    local mouse = LocalPlayer:GetMouse()
-                    mouse.TargetFilter = targetPart
-                else
-                    -- Rage Aim (direct camera movement)
-                    camera.CFrame = CFrame.lookAt(camera.CFrame.Position, targetPart.Position)
+            if visible then
+                local distance = (Vector2.new(mouse.X, mouse.Y) - Vector2.new(screenPoint.X, screenPoint.Y)).Magnitude
+                if distance < shortestDistance then
+                    shortestDistance = distance
+                    closestPlayer = player
                 end
-                
-                -- Auto shoot
-                SimulateMouseClick()
+            end
+        end
+    end
+    return closestPlayer
+end
+
+-- RageBot Function
+function rageBotAim()
+    if not getgenv().Ragebot then return end
+    
+    local target = findBestTarget()
+    if target and target.Character then
+        local aimPartName = AimSequence[CurrentAimIndex]
+        CurrentAimIndex = CurrentAimIndex % #AimSequence + 1
+        
+        local aimPart = target.Character:FindFirstChild(aimPartName) or target.Character:FindFirstChild("HumanoidRootPart")
+        if aimPart then
+            workspace.CurrentCamera.CFrame = CFrame.new(workspace.CurrentCamera.CFrame.Position, aimPart.Position)
+        end
+    end
+end
+
+-- ESP Function
+function updateESP()
+    if not getgenv().ESPBox then return end
+    
+    for _, player in pairs(game.Players:GetPlayers()) do
+        if player ~= game.Players.LocalPlayer and player.Character then
+            -- Create/update ESP box
+            -- Implementation for drawing boxes around players
+        end
+    end
+end
+
+-- Tracer Function
+function updateTracers()
+    if not getgenv().Tracer then return end
+    
+    for _, player in pairs(game.Players:GetPlayers()) do
+        if player ~= game.Players.LocalPlayer and player.Character then
+            -- Create/update tracer lines
+            -- Implementation for drawing lines to players
+        end
+    end
+end
+
+-- Wallhack Chams Function
+function updateChams()
+    if not getgenv().Wallhack then return end
+    
+    for _, player in pairs(game.Players:GetPlayers()) do
+        if player ~= game.Players.LocalPlayer and player.Character then
+            for _, part in pairs(player.Character:GetChildren()) do
+                if part:IsA("BasePart") then
+                    part.Material = Enum.Material.ForceField
+                    part.LocalTransparencyModifier = 0.5
+                end
+            end
+        end
+    end
+end
+
+-- Noclip Function
+function noclipLoop()
+    game:GetService('RunService').Stepped:Connect(function()
+        if getgenv().Noclip and game.Players.LocalPlayer.Character then
+            for _, part in pairs(game.Players.LocalPlayer.Character:GetDescendants()) do
+                if part:IsA("BasePart") then
+                    part.CanCollide = false
+                end
             end
         end
     end)
-    
-    table.insert(getgenv().RageBot.Connections, connection)
 end
 
-function StopRageBot()
-    getgenv().RageBot.Active = false
-    
-    for _, connection in pairs(getgenv().RageBot.Connections) do
-        if connection then
-            connection:Disconnect()
-        end
+-- Main Loop
+game:GetService('RunService').RenderStepped:Connect(function()
+    if getgenv().Aimbot then
+        -- Regular aimbot implementation
     end
     
-    getgenv().RageBot.Connections = {}
-end
-
--- ESP FUNCTIONS
-function StartESP()
-    local Players = game:GetService("Players")
-    local LocalPlayer = Players.LocalPlayer
-    
-    local function CreateESP(player)
-        if player == LocalPlayer then return end
-        
-        local character = player.Character or player.CharacterAdded:Wait()
-        if not character then return end
-        
-        -- Wait for character to fully load
-        local humanoid = character:WaitForChild("Humanoid")
-        local rootPart = character:WaitForChild("HumanoidRootPart")
-        
-        -- Box ESP
-        if getgenv().BoxESP then
-            local box = Drawing.new("Square")
-            box.Visible = true
-            box.Color = getgenv().ESPColor or Color3.fromRGB(255, 0, 0)
-            box.Thickness = 2
-            box.Filled = false
-            box.ZIndex = 1
-            
-            local boxUpdate
-            boxUpdate = game:GetService("RunService").RenderStepped:Connect(function()
-                if not getgenv().ESPEnabled or not character or not character.Parent then
-                    box:Remove()
-                    boxUpdate:Disconnect()
-                    return
-                end
-                
-                local rootPos = rootPart.Position
-                local rootScreenPos, rootVisible = workspace.CurrentCamera:WorldToViewportPoint(rootPos)
-                
-                if rootVisible then
-                    local scaleFactor = 1 / (rootScreenPos.Z * math.tan(math.rad(workspace.CurrentCamera.FieldOfView * 0.5)) * 2) * 100
-                    local width, height = 4 * scaleFactor, 6 * scaleFactor
-                    
-                    box.Size = Vector2.new(width, height)
-                    box.Position = Vector2.new(rootScreenPos.X - width / 2, rootScreenPos.Y - height / 2)
-                    box.Visible = true
-                else
-                    box.Visible = false
-                end
-            end)
-        end
-        
-        -- Tracer ESP
-        if getgenv().TracerESP then
-            local tracer = Drawing.new("Line")
-            tracer.Visible = true
-            tracer.Color = getgenv().ESPColor or Color3.fromRGB(255, 0, 0)
-            tracer.Thickness = 1
-            tracer.ZIndex = 1
-            
-            local tracerUpdate
-            tracerUpdate = game:GetService("RunService").RenderStepped:Connect(function()
-                if not getgenv().ESPEnabled or not character or not character.Parent then
-                    tracer:Remove()
-                    tracerUpdate:Disconnect()
-                    return
-                end
-                
-                local rootPos = rootPart.Position
-                local rootScreenPos, rootVisible = workspace.CurrentCamera:WorldToViewportPoint(rootPos)
-                
-                if rootVisible then
-                    tracer.From = Vector2.new(workspace.CurrentCamera.ViewportSize.X / 2, workspace.CurrentCamera.ViewportSize.Y)
-                    tracer.To = Vector2.new(rootScreenPos.X, rootScreenPos.Y)
-                    tracer.Visible = true
-                else
-                    tracer.Visible = false
-                end
-            end)
-        end
-        
-        -- Name ESP
-        if getgenv().NameESP then
-            local nameLabel = Drawing.new("Text")
-            nameLabel.Visible = true
-            nameLabel.Color = getgenv().ESPColor or Color3.fromRGB(255, 0, 0)
-            nameLabel.Size = 13
-            nameLabel.Text = player.Name
-            nameLabel.ZIndex = 1
-            
-            local nameUpdate
-            nameUpdate = game:GetService("RunService").RenderStepped:Connect(function()
-                if not getgenv().ESPEnabled or not character or not character.Parent then
-                    nameLabel:Remove()
-                    nameUpdate:Disconnect()
-                    return
-                end
-                
-                local rootPos = rootPart.Position
-                local rootScreenPos, rootVisible = workspace.CurrentCamera:WorldToViewportPoint(rootPos)
-                
-                if rootVisible then
-                    nameLabel.Position = Vector2.new(rootScreenPos.X, rootScreenPos.Y - 30)
-                    nameLabel.Visible = true
-                else
-                    nameLabel.Visible = false
-                end
-            end)
-        end
-    end
-    
-    for _, player in pairs(Players:GetPlayers()) do
-        if player ~= LocalPlayer then
-            CreateESP(player)
-        end
-    end
-    
-    Players.PlayerAdded:Connect(function(player)
-        if player ~= LocalPlayer then
-            CreateESP(player)
-        end
-    end)
-end
-
-function StopESP()
-    getgenv().ESPEnabled = false
-end
-
--- INITIALIZE
-CreateFOVCircle()
-
-game:GetService("RunService").RenderStepped:Connect(function()
-    if FOVCircle then
-        UpdateFOVCircle()
+    if getgenv().Ragebot then
+        rageBotAim()
     end
 end)
 
-getgenv().FlickSpeed = 1
-getgenv().SilentAim = false
-getgenv().AutoShoot = false
-getgenv().TargetPart = "Head"
-getgenv().FOVSize = 100
-getgenv().FOVColor = Color3.fromRGB(255, 0, 0)
-getgenv().ShowFOV = true
-getgenv().ESPEnabled = false
-getgenv().BoxESP = false
-getgenv().TracerESP = false
-getgenv().NameESP = false
-getgenv().ESPColor = Color3.fromRGB(255, 0, 0)
-
-Rayfield:Notify({
-    Title = "Flick Rage Bot Loaded",
-    Content = "FOV Circle and ESP fixed!",
-    Duration = 5,
-})
+Rayfield:LoadConfiguration()
