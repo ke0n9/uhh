@@ -1,378 +1,266 @@
--- LocalScript di StarterPlayerScripts
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-local UserInputService = game:GetService("UserInputService")
-local TweenService = game:GetService("TweenService")
+-- == Hitbox Extender for Roblox ==
+-- Author: Colin
+-- Description: Extend hitbox for weapons and bare hands with Rayfield UI
 
-local player = Players.LocalPlayer
-
--- Load Rayfield UI
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
--- Configurasi Hitbox
-local hitboxConfig = {
-    enabled = false,
-    size = 10,
-    transparency = 0.6,
-    color = Color3.fromRGB(255, 50, 50),
-    visible = true,
-    autoUpdate = true
-}
-
-local currentHitbox = nil
-local currentTool = nil
-local hitboxConnection = nil
-
--- Window utama
 local Window = Rayfield:CreateWindow({
-    Name = "Weapon Hitbox Expander 🔫",
-    LoadingTitle = "Loading Hitbox System...",
-    LoadingSubtitle = "by Educational Purpose",
+    Name = "Hitbox Extender Pro",
+    LoadingTitle = "Hitbox Extender",
+    LoadingSubtitle = "by Colin",
     ConfigurationSaving = {
         Enabled = true,
-        FolderName = "HitboxConfig",
-        FileName = "WeaponSettings"
+        FolderName = "HitboxExtender",
+        FileName = "Config"
     },
     Discord = {
         Enabled = false,
-        Invite = "noinvitelink",
+        Invite = "noinvite",
         RememberJoins = true
     },
     KeySystem = false,
 })
 
--- Tab utama
-local MainTab = Window:CreateTab("Main Settings", "rbxassetid://4483345998")
-local VisualTab = Window:CreateTab("Visual Settings", "rbxassetid://4483345998")
+local MainTab = Window:CreateTab("Main Features", 4483362458)
+local VisualsTab = Window:CreateTab("Visuals", 4483362458)
+local SettingsTab = Window:CreateTab("Settings", 4483362458)
 
--- Section: Activation
-local ActivationSection = MainTab:CreateSection("Activation")
+-- A. MAIN HITBOX SETTINGS
+local HitboxSection = MainTab:CreateSection("Hitbox Configuration")
 
-local Toggle = MainTab:CreateToggle({
-    Name = "Enable Weapon Hitbox",
-    CurrentValue = false,
-    Flag = "HitboxEnabled",
-    Callback = function(Value)
-        hitboxConfig.enabled = Value
-        if Value then
-            Rayfield:Notify({
-                Title = "Hitbox Enabled",
-                Content = "Weapon hitbox system activated",
-                Duration = 2,
-                Image = "rbxassetid://4483345998",
-            })
-            createHitbox()
-        else
-            removeHitbox()
-            Rayfield:Notify({
-                Title = "Hitbox Disabled",
-                Content = "Weapon hitbox system deactivated",
-                Duration = 2,
-                Image = "rbxassetid://4483345998",
-            })
-        end
-    end,
-})
-
--- Section: Size Settings
-local SizeSection = MainTab:CreateSection("Size Settings")
-
-local SizeSlider = MainTab:CreateSlider({
-    Name = "Hitbox Size",
-    Range = {5, 30},
-    Increment = 1,
-    Suffix = "studs",
-    CurrentValue = 10,
+local HitboxSize = MainTab:CreateSlider({
+    Name = "Hitbox Size Multiplier",
+    Range = {1, 10},
+    Increment = 0.1,
+    Suffix = "x",
+    CurrentValue = 1,
     Flag = "HitboxSize",
     Callback = function(Value)
-        hitboxConfig.size = Value
-        updateHitboxSize()
+        getgenv().HitboxMultiplier = Value
     end,
 })
 
--- Section: Weapon Selection
-local WeaponSection = MainTab:CreateSection("Weapon Selection")
-
-local WeaponDropdown = MainTab:CreateDropdown({
-    Name = "Select Weapon",
-    Options = {"Auto Detect", "Manual Select"},
-    CurrentOption = "Auto Detect",
-    Flag = "WeaponSelection",
+local HitboxType = MainTab:CreateDropdown({
+    Name = "Hitbox Target",
+    Options = {"All Players", "Enemies Only", "Teammates Only", "Specific Player"},
+    CurrentOption = "All Players",
+    Flag = "HitboxTarget",
     Callback = function(Option)
-        if Option == "Auto Detect" then
-            setupAutoDetect()
-        else
-            setupManualSelect()
-        end
+        getgenv().HitboxTarget = Option
     end,
 })
 
--- Section: Visual Settings
-local VisualSection = VisualTab:CreateSection("Appearance")
-
-local TransparencySlider = VisualTab:CreateSlider({
-    Name = "Transparency",
-    Range = {0.1, 0.9},
-    Increment = 0.1,
-    CurrentValue = 0.6,
-    Flag = "HitboxTransparency",
+local WeaponHitbox = MainTab:CreateToggle({
+    Name = "Extend Weapon Hitbox",
+    CurrentValue = false,
+    Flag = "WeaponHitbox",
     Callback = function(Value)
-        hitboxConfig.transparency = Value
-        updateHitboxAppearance()
+        getgenv().WeaponHitboxEnabled = Value
     end,
 })
 
-local ColorPicker = VisualTab:CreateColorPicker({
+local FistHitbox = MainTab:CreateToggle({
+    Name = "Extend Fist Hitbox",
+    CurrentValue = false,
+    Flag = "FistHitbox",
+    Callback = function(Value)
+        getgenv().FistHitboxEnabled = Value
+    end,
+})
+
+-- B. VISUAL SETTINGS
+local VisualSection = VisualsTab:CreateSection("Visual Configuration")
+
+local ShowHitbox = VisualsTab:CreateToggle({
+    Name = "Show Hitbox Visual",
+    CurrentValue = false,
+    Flag = "ShowHitbox",
+    Callback = function(Value)
+        getgenv().ShowHitboxVisual = Value
+    end,
+})
+
+local HitboxColor = VisualsTab:CreateColorPicker({
     Name = "Hitbox Color",
-    Color = Color3.fromRGB(255, 50, 50),
+    Color = Color3.fromRGB(255, 0, 0),
     Flag = "HitboxColor",
-    Callback = function(Value)
-        hitboxConfig.color = Value
-        updateHitboxAppearance()
+    Callback = function(Color)
+        getgenv().HitboxVisualColor = Color
     end
 })
 
-local VisibilityToggle = VisualTab:CreateToggle({
-    Name = "Visible Hitbox",
-    CurrentValue = true,
-    Flag = "HitboxVisible",
-    Callback = function(Value)
-        hitboxConfig.visible = Value
-        updateHitboxAppearance()
-    end,
-})
-
--- Section: Advanced
-local AdvancedSection = MainTab:CreateSection("Advanced Settings")
-
-local AutoUpdateToggle = MainTab:CreateToggle({
-    Name = "Auto Update Position",
-    CurrentValue = true,
-    Flag = "AutoUpdate",
-    Callback = function(Value)
-        hitboxConfig.autoUpdate = Value
-        if Value and hitboxConfig.enabled then
-            startAutoUpdate()
-        else
-            stopAutoUpdate()
-        end
-    end,
-})
-
--- Button untuk refresh hitbox
-local RefreshButton = MainTab:CreateButton({
-    Name = "Refresh Hitbox",
-    Callback = function()
-        if hitboxConfig.enabled then
-            removeHitbox()
-            wait(0.1)
-            createHitbox()
-            Rayfield:Notify({
-                Title = "Hitbox Refreshed",
-                Content = "Weapon hitbox has been updated",
-                Duration = 1.5,
-            })
-        end
-    end,
-})
-
--- Fungsi untuk membuat hitbox
-function createHitbox()
-    if currentHitbox then
-        currentHitbox:Destroy()
-    end
+-- C. MAIN HITBOX EXTENSION FUNCTION
+function ExtendHitbox()
+    local Players = game:GetService("Players")
+    local LocalPlayer = Players.LocalPlayer
+    local RunService = game:GetService("RunService")
     
-    local character = player.Character
-    if not character then return end
+    -- Hitbox extension variables
+    getgenv().HitboxMultiplier = getgenv().HitboxMultiplier or 1
+    getgenv().HitboxTarget = getgenv().HitboxTarget or "All Players"
+    getgenv().WeaponHitboxEnabled = getgenv().WeaponHitboxEnabled or false
+    getgenv().FistHitboxEnabled = getgenv().FistHitboxEnabled or false
+    getgenv().ShowHitboxVisual = getgenv().ShowHitboxVisual or false
+    getgenv().HitboxVisualColor = getgenv().HitboxVisualColor or Color3.fromRGB(255, 0, 0)
     
-    -- Cari tool yang sedang dipegang
-    local tool = findEquippedTool(character)
-    if not tool then
-        Rayfield:Notify({
-            Title = "No Weapon Found",
-            Content = "Please equip a weapon first",
-            Duration = 3,
-            Image = "rbxassetid://4483345998",
-        })
-        return
-    end
-    
-    currentTool = tool
-    
-    -- Buat hitbox part
-    local hitbox = Instance.new("Part")
-    hitbox.Name = "WeaponHitbox"
-    hitbox.Size = Vector3.new(hitboxConfig.size, hitboxConfig.size, hitboxConfig.size)
-    hitbox.Shape = Enum.PartType.Ball
-    hitbox.Material = EnumMaterial.Neon
-    hitbox.BrickColor = BrickColor.new(hitboxConfig.color)
-    hitbox.Transparency = hitboxConfig.transparency
-    hitbox.CanCollide = false
-    hitbox.Anchored = true
-    hitbox.Parent = workspace
-    
-    -- Selection box untuk visual yang lebih baik
-    local selectionBox = Instance.new("SelectionBox")
-    selectionBox.Adornee = hitbox
-    selectionBox.LineThickness = 0.02
-    selectionBox.Color3 = hitboxConfig.color
-    selectionBox.Parent = hitbox
-    
-    -- Highlight effect
-    local highlight = Instance.new("Highlight")
-    highlight.Adornee = hitbox
-    highlight.FillColor = hitboxConfig.color
-    highlight.FillTransparency = 0.8
-    highlight.OutlineColor = hitboxConfig.color
-    highlight.OutlineTransparency = 0
-    highlight.Parent = hitbox
-    
-    currentHitbox = hitbox
-    
-    -- Update posisi awal
-    updateHitboxPosition()
-    
-    -- Start auto update jika enabled
-    if hitboxConfig.autoUpdate then
-        startAutoUpdate()
-    end
-    
-    Rayfield:Notify({
-        Title = "Hitbox Created",
-        Content = "Hitbox attached to: " .. tool.Name,
-        Duration = 2,
-    })
-end
-
--- Fungsi untuk menghapus hitbox
-function removeHitbox()
-    if currentHitbox then
-        currentHitbox:Destroy()
-        currentHitbox = nil
-    end
-    stopAutoUpdate()
-    currentTool = nil
-end
-
--- Fungsi update ukuran hitbox
-function updateHitboxSize()
-    if currentHitbox then
-        currentHitbox.Size = Vector3.new(hitboxConfig.size, hitboxConfig.size, hitboxConfig.size)
-    end
-end
-
--- Fungsi update appearance hitbox
-function updateHitboxAppearance()
-    if currentHitbox then
-        currentHitbox.Transparency = hitboxConfig.transparency
-        currentHitbox.BrickColor = BrickColor.new(hitboxConfig.color)
-        
-        local selectionBox = currentHitbox:FindFirstChild("SelectionBox")
-        if selectionBox then
-            selectionBox.Color3 = hitboxConfig.color
+    -- Main hitbox extension loop
+    local HitboxConnection
+    HitboxConnection = RunService.Heartbeat:Connect(function()
+        if not getgenv().HitboxEnabled then
+            HitboxConnection:Disconnect()
+            return
         end
         
-        local highlight = currentHitbox:FindFirstChild("Highlight")
-        if highlight then
-            highlight.FillColor = hitboxConfig.color
-            highlight.OutlineColor = hitboxConfig.color
-        end
-        
-        currentHitbox.Visible = hitboxConfig.visible
-    end
-end
-
--- Fungsi mencari tool yang sedang dipegang
-function findEquippedTool(character)
-    for _, tool in pairs(character:GetChildren()) do
-        if tool:IsA("Tool") and tool.Enabled then
-            return tool
-        end
-    end
-    return nil
-end
-
--- Fungsi update posisi hitbox
-function updateHitboxPosition()
-    if not currentHitbox or not currentTool then return end
-    
-    local handle = currentTool:FindFirstChild("Handle")
-    if handle then
-        currentHitbox.CFrame = handle.CFrame
-    else
-        currentHitbox.CFrame = currentTool.CFrame
-    end
-end
-
--- Fungsi auto update posisi
-function startAutoUpdate()
-    stopAutoUpdate()
-    
-    hitboxConnection = RunService.Heartbeat:Connect(function()
-        if hitboxConfig.enabled and currentHitbox and currentTool then
-            updateHitboxPosition()
+        for _, player in pairs(Players:GetPlayers()) do
+            if player ~= LocalPlayer then
+                local character = player.Character
+                if character and character:FindFirstChild("Humanoid") and character.Humanoid.Health > 0 then
+                    
+                    -- Check target filtering
+                    local shouldExtend = false
+                    if getgenv().HitboxTarget == "All Players" then
+                        shouldExtend = true
+                    elseif getgenv().HitboxTarget == "Enemies Only" then
+                        -- Add team check logic here based on game
+                        shouldExtend = true -- Placeholder
+                    elseif getgenv().HitboxTarget == "Teammates Only" then
+                        -- Add team check logic here
+                        shouldExtend = true -- Placeholder
+                    end
+                    
+                    if shouldExtend then
+                        -- Extend head hitbox
+                        local head = character:FindFirstChild("Head")
+                        if head then
+                            local originalSize = head.Size
+                            head.Size = originalSize * getgenv().HitboxMultiplier
+                            
+                            -- Visual hitbox
+                            if getgenv().ShowHitboxVisual and not head:FindFirstChild("HitboxVisual") then
+                                local hitboxVisual = Instance.new("BoxHandleAdornment")
+                                hitboxVisual.Name = "HitboxVisual"
+                                hitboxVisual.Adornee = head
+                                hitboxVisual.AlwaysOnTop = true
+                                hitboxVisual.ZIndex = 10
+                                hitboxVisual.Size = head.Size
+                                hitboxVisual.Transparency = 0.7
+                                hitboxVisual.Color3 = getgenv().HitboxVisualColor
+                                hitboxVisual.Parent = head
+                            end
+                        end
+                        
+                        -- Extend weapon hitboxes
+                        if getgenv().WeaponHitboxEnabled then
+                            for _, tool in pairs(character:GetChildren()) do
+                                if tool:IsA("Tool") then
+                                    local handle = tool:FindFirstChild("Handle")
+                                    if handle then
+                                        handle.Size = handle.Size * getgenv().HitboxMultiplier
+                                    end
+                                end
+                            end
+                        end
+                        
+                        -- Extend fist hitboxes
+                        if getgenv().FistHitboxEnabled then
+                            local leftArm = character:FindFirstChild("LeftHand") or character:FindFirstChild("LeftArm")
+                            local rightArm = character:FindFirstChild("RightHand") or character:FindFirstChild("RightArm")
+                            
+                            if leftArm then
+                                leftArm.Size = leftArm.Size * getgenv().HitboxMultiplier
+                            end
+                            if rightArm then
+                                rightArm.Size = rightArm.Size * getgenv().HitboxMultiplier
+                            end
+                        end
+                    end
+                end
+            end
         end
     end)
 end
 
-function stopAutoUpdate()
-    if hitboxConnection then
-        hitboxConnection:Disconnect()
-        hitboxConnection = nil
-    end
-end
-
--- Fungsi setup auto detect
-function setupAutoDetect()
-    local character = player.Character
-    if character then
-        character.ChildAdded:Connect(function(child)
-            if child:IsA("Tool") and hitboxConfig.enabled then
-                removeHitbox()
-                wait(0.5)
-                createHitbox()
+-- D. TOGGLE MAIN FUNCTION
+local ToggleHitbox = MainTab:CreateToggle({
+    Name = "Enable Hitbox Extender",
+    CurrentValue = false,
+    Flag = "HitboxEnabled",
+    Callback = function(Value)
+        getgenv().HitboxEnabled = Value
+        if Value then
+            ExtendHitbox()
+            Rayfield:Notify({
+                Title = "Hitbox Extender",
+                Content = "Hitbox extender activated!",
+                Duration = 3,
+                Image = 4483362458
+            })
+        else
+            -- Reset all hitboxes when disabled
+            for _, player in pairs(game:GetService("Players"):GetPlayers()) do
+                local character = player.Character
+                if character then
+                    local head = character:FindFirstChild("Head")
+                    if head then
+                        head.Size = Vector3.new(2, 1, 1) -- Default head size
+                        local visual = head:FindFirstChild("HitboxVisual")
+                        if visual then
+                            visual:Destroy()
+                        end
+                    end
+                end
             end
-        end)
-        
-        character.ChildRemoved:Connect(function(child)
-            if child:IsA("Tool") and child == currentTool then
-                removeHitbox()
-            end
-        end)
-    end
-end
-
--- Fungsi setup manual select (placeholder)
-function setupManualSelect()
-    Rayfield:Notify({
-        Title = "Manual Selection",
-        Content = "Equip your weapon and click Refresh Hitbox",
-        Duration = 3,
-    })
-end
-
--- Handler untuk karakter respawn
-player.CharacterAdded:Connect(function(character)
-    character:WaitForChild("Humanoid")
-    
-    if hitboxConfig.enabled then
-        wait(3) -- Tunggu karakter fully load
-        createHitbox()
-    end
-end)
-
--- Initialize
-Rayfield:Notify({
-    Title = "Weapon Hitbox Loaded",
-    Content = "System ready for educational purposes",
-    Duration = 4,
-    Image = "rbxassetid://4483345998",
+        end
+    end,
 })
 
--- Auto load jika karakter sudah ada
-if player.Character then
-    wait(2)
-    if hitboxConfig.enabled then
-        createHitbox()
-    end
-end
+-- E. PRESET SETTINGS
+local PresetSection = SettingsTab:CreateSection("Quick Presets")
+
+SettingsTab:CreateButton({
+    Name = "Small Hitbox (2x)",
+    Callback = function()
+        HitboxSize:Set(2)
+        Rayfield:Notify({
+            Title = "Preset Applied",
+            Content = "Small hitbox preset activated",
+            Duration = 2
+        })
+    end,
+})
+
+SettingsTab:CreateButton({
+    Name = "Medium Hitbox (4x)",
+    Callback = function()
+        HitboxSize:Set(4)
+        Rayfield:Notify({
+            Title = "Preset Applied",
+            Content = "Medium hitbox preset activated",
+            Duration = 2
+        })
+    end,
+})
+
+SettingsTab:CreateButton({
+    Name = "Large Hitbox (6x)",
+    Callback = function()
+        HitboxSize:Set(6)
+        Rayfield:Notify({
+            Title = "Preset Applied",
+            Content = "Large hitbox preset activated",
+            Duration = 2
+        })
+    end,
+})
+
+-- F. INITIALIZE SCRIPT
+Rayfield:Notify({
+    Title = "Hitbox Extender Loaded",
+    Content = "Script successfully loaded! Configure your settings.",
+    Duration = 5,
+    Image = 4483362458
+})
+
+-- Auto-execute when script starts
+getgenv().HitboxEnabled = false
+getgenv().HitboxMultiplier = 1
