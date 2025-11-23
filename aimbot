@@ -1,0 +1,221 @@
+-- Roblox Exploit Script with Rayfield UI
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+local CurrentAimIndex = 1
+local AimSequence = {"Head", "UpperTorso", "LowerTorso"}
+
+local Window = Rayfield:CreateWindow({
+   Name = "aimbot",
+   LoadingTitle = ".",
+   LoadingSubtitle = "by axel",
+   ConfigurationSaving = {
+      Enabled = true,
+      FolderName = "aimbot xell",
+      FileName = "Config.json"
+   },
+   Discord = {
+      Enabled = false,
+      Invite = "noinvite",
+      RememberJoins = true
+   },
+   KeySystem = false,
+})
+
+-- Main Tab
+local MainTab = Window:CreateTab("Combat", 4483362458)
+
+-- Aimbot Section
+local AimbotSection = MainTab:CreateSection("Aimbot")
+
+local AimbotToggle = MainTab:CreateToggle({
+   Name = "Aimbot",
+   CurrentValue = false,
+   Flag = "AimbotEnabled",
+   Callback = function(Value)
+       getgenv().Aimbot = Value
+   end,
+})
+
+local RagebotToggle = MainTab:CreateToggle({
+   Name = "RageBot (Head->Body->Body)",
+   CurrentValue = false,
+   Flag = "RagebotEnabled",
+   Callback = function(Value)
+       getgenv().Ragebot = Value
+   end,
+})
+
+local FOVSlider = MainTab:CreateSlider({
+   Name = "Aimbot FOV",
+   Range = {0, 360},
+   Increment = 5,
+   Suffix = "degrees",
+   CurrentValue = 50,
+   Flag = "AimbotFOV",
+   Callback = function(Value)
+       getgenv().AimbotFOV = Value
+   end,
+})
+
+-- Visuals Tab
+local VisualsTab = Window:CreateTab("Visuals", 4483362458)
+
+local ESPToggle = VisualsTab:CreateToggle({
+   Name = "ESP Box",
+   CurrentValue = false,
+   Flag = "ESPEnabled",
+   Callback = function(Value)
+       getgenv().ESPBox = Value
+       updateESP()
+   end,
+})
+
+local TracerToggle = VisualsTab:CreateToggle({
+   Name = "Tracer",
+   CurrentValue = false,
+   Flag = "TracerEnabled",
+   Callback = function(Value)
+       getgenv().Tracer = Value
+       updateTracers()
+   end,
+})
+
+local InfoToggle = VisualsTab:CreateToggle({
+   Name = "Player Info",
+   CurrentValue = false,
+   Flag = "InfoEnabled",
+   Callback = function(Value)
+       getgenv().PlayerInfo = Value
+       updatePlayerInfo()
+   end,
+})
+
+local ChamsToggle = VisualsTab:CreateToggle({
+   Name = "Wallhack Chams",
+   CurrentValue = false,
+   Flag = "ChamsEnabled",
+   Callback = function(Value)
+       getgenv().Wallhack = Value
+       updateChams()
+   end,
+})
+
+-- Movement Tab
+local MovementTab = Window:CreateTab("Movement", 4483362458)
+
+local NoclipToggle = MovementTab:CreateToggle({
+   Name = "Noclip",
+   CurrentValue = false,
+   Flag = "NoclipEnabled",
+   Callback = function(Value)
+       getgenv().Noclip = Value
+       if Value then
+           noclipLoop()
+       end
+   end,
+})
+
+-- Aimbot Function
+function findBestTarget()
+    local closestPlayer = nil
+    local shortestDistance = getgenv().AimbotFOV or 50
+    local localPlayer = game.Players.LocalPlayer
+    local mouse = game.Players.LocalPlayer:GetMouse()
+    
+    for _, player in pairs(game.Players:GetPlayers()) do
+        if player ~= localPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+            local character = player.Character
+            local screenPoint, visible = workspace.CurrentCamera:WorldToViewportPoint(character.HumanoidRootPart.Position)
+            
+            if visible then
+                local distance = (Vector2.new(mouse.X, mouse.Y) - Vector2.new(screenPoint.X, screenPoint.Y)).Magnitude
+                if distance < shortestDistance then
+                    shortestDistance = distance
+                    closestPlayer = player
+                end
+            end
+        end
+    end
+    return closestPlayer
+end
+
+-- RageBot Function
+function rageBotAim()
+    if not getgenv().Ragebot then return end
+    
+    local target = findBestTarget()
+    if target and target.Character then
+        local aimPartName = AimSequence[CurrentAimIndex]
+        CurrentAimIndex = CurrentAimIndex % #AimSequence + 1
+        
+        local aimPart = target.Character:FindFirstChild(aimPartName) or target.Character:FindFirstChild("HumanoidRootPart")
+        if aimPart then
+            workspace.CurrentCamera.CFrame = CFrame.new(workspace.CurrentCamera.CFrame.Position, aimPart.Position)
+        end
+    end
+end
+
+-- ESP Function
+function updateESP()
+    if not getgenv().ESPBox then return end
+    
+    for _, player in pairs(game.Players:GetPlayers()) do
+        if player ~= game.Players.LocalPlayer and player.Character then
+            -- Create/update ESP box
+            -- Implementation for drawing boxes around players
+        end
+    end
+end
+
+-- Tracer Function
+function updateTracers()
+    if not getgenv().Tracer then return end
+    
+    for _, player in pairs(game.Players:GetPlayers()) do
+        if player ~= game.Players.LocalPlayer and player.Character then
+            -- Create/update tracer lines
+            -- Implementation for drawing lines to players
+        end
+    end
+end
+
+-- Wallhack Chams Function
+function updateChams()
+    if not getgenv().Wallhack then return end
+    
+    for _, player in pairs(game.Players:GetPlayers()) do
+        if player ~= game.Players.LocalPlayer and player.Character then
+            for _, part in pairs(player.Character:GetChildren()) do
+                if part:IsA("BasePart") then
+                    part.Material = Enum.Material.ForceField
+                    part.LocalTransparencyModifier = 0.5
+                end
+            end
+        end
+    end
+end
+
+-- Noclip Function
+function noclipLoop()
+    game:GetService('RunService').Stepped:Connect(function()
+        if getgenv().Noclip and game.Players.LocalPlayer.Character then
+            for _, part in pairs(game.Players.LocalPlayer.Character:GetDescendants()) do
+                if part:IsA("BasePart") then
+                    part.CanCollide = false
+                end
+            end
+        end
+    end)
+end
+
+-- Main Loop
+game:GetService('RunService').RenderStepped:Connect(function()
+    if getgenv().Aimbot then
+        -- Regular aimbot implementation
+    end
+    
+    if getgenv().Ragebot then
+        rageBotAim()
+    end
+end)
+
+Rayfield:LoadConfiguration()
