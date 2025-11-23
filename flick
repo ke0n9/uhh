@@ -1,0 +1,491 @@
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+
+local Window = Rayfield:CreateWindow({
+    Name = "Flick Rage Bot",
+    LoadingTitle = "Flick Rage Bot",
+    LoadingSubtitle = "by Colin",
+    ConfigurationSaving = {
+        Enabled = true,
+        FolderName = "FlickRageBot",
+        FileName = "Config"
+    },
+    Discord = {
+        Enabled = false,
+        Invite = "noinvite",
+        RememberJoins = true
+    },
+    KeySystem = false,
+})
+
+local MainTab = Window:CreateTab("Combat", 4483362458)
+local VisualTab = Window:CreateTab("Visual", 4483362458)
+local BypassTab = Window:CreateTab("Bypass", 4483362458)
+
+getgenv().RageBot = {
+    Active = false,
+    Targets = {},
+    Connections = {}
+}
+
+-- RAGE BOT FEATURES
+local RageSection = MainTab:CreateSection("Rage Bot")
+
+local RageToggle = MainTab:CreateToggle({
+    Name = "Rage Bot",
+    CurrentValue = false,
+    Flag = "RageEnabled",
+    Callback = function(Value)
+        getgenv().RageBot.Enabled = Value
+        if Value then
+            StartRageBot()
+        else
+            StopRageBot()
+        end
+    end,
+})
+
+local AutoShoot = MainTab:CreateToggle({
+    Name = "Auto Shoot",
+    CurrentValue = false,
+    Flag = "AutoShoot",
+    Callback = function(Value)
+        getgenv().AutoShoot = Value
+    end,
+})
+
+local InstantKill = MainTab:CreateToggle({
+    Name = "Instant Kill",
+    CurrentValue = false,
+    Flag = "InstantKill",
+    Callback = function(Value)
+        getgenv().InstantKill = Value
+    end,
+})
+
+local FlickSpeed = MainTab:CreateSlider({
+    Name = "Flick Speed",
+    Range = {0.1, 5},
+    Increment = 0.1,
+    Suffix = "s",
+    CurrentValue = 1,
+    Flag = "FlickSpeed",
+    Callback = function(Value)
+        getgenv().FlickSpeed = Value
+    end,
+})
+
+-- ESP FEATURES
+local ESPSection = VisualTab:CreateSection("ESP")
+
+local ESPToggle = VisualTab:CreateToggle({
+    Name = "ESP",
+    CurrentValue = false,
+    Flag = "ESPEnabled",
+    Callback = function(Value)
+        getgenv().ESPEnabled = Value
+        if Value then
+            StartESP()
+        else
+            StopESP()
+        end
+    end,
+})
+
+local BoxESP = VisualTab:CreateToggle({
+    Name = "Box ESP",
+    CurrentValue = false,
+    Flag = "BoxESP",
+    Callback = function(Value)
+        getgenv().BoxESP = Value
+    end,
+})
+
+local TracerESP = VisualTab:CreateToggle({
+    Name = "Tracer ESP",
+    CurrentValue = false,
+    Flag = "TracerESP",
+    Callback = function(Value)
+        getgenv().TracerESP = Value
+    end,
+})
+
+local NameESP = VisualTab:CreateToggle({
+    Name = "Name ESP",
+    CurrentValue = false,
+    Flag = "NameESP",
+    Callback = function(Value)
+        getgenv().NameESP = Value
+    end,
+})
+
+-- WALL HACK FEATURES
+local WallSection = VisualTab:CreateSection("Wall Hack")
+
+local WallHackToggle = VisualTab:CreateToggle({
+    Name = "Wall Hack",
+    CurrentValue = false,
+    Flag = "WallHackEnabled",
+    Callback = function(Value)
+        getgenv().WallHackEnabled = Value
+        if Value then
+            EnableWallHack()
+        else
+            DisableWallHack()
+        end
+    end,
+})
+
+local ThroughWalls = VisualTab:CreateToggle({
+    Name = "See Through Walls",
+    CurrentValue = false,
+    Flag = "ThroughWalls",
+    Callback = function(Value)
+        getgenv().ThroughWalls = Value
+    end,
+})
+
+local ChamsToggle = VisualTab:CreateToggle({
+    Name = "Chams",
+    CurrentValue = false,
+    Flag = "ChamsEnabled",
+    Callback = function(Value)
+        getgenv().ChamsEnabled = Value
+        if Value then
+            EnableChams()
+        else
+            DisableChams()
+        end
+    end,
+})
+
+-- BYPASS FEATURES
+local BypassSection = BypassTab:CreateSection("Bypass")
+
+local AntiCheatBypass = BypassTab:CreateToggle({
+    Name = "Anti-Cheat Bypass",
+    CurrentValue = false,
+    Flag = "AntiCheatBypass",
+    Callback = function(Value)
+        getgenv().AntiCheatBypass = Value
+        if Value then
+            EnableAntiCheatBypass()
+        end
+    end,
+})
+
+local AntiAimToggle = BypassTab:CreateToggle({
+    Name = "Anti-Aim",
+    CurrentValue = false,
+    Flag = "AntiAimEnabled",
+    Callback = function(Value)
+        getgenv().AntiAim = Value
+        if Value then
+            EnableAntiAim()
+        end
+    end,
+})
+
+local NoRecoil = BypassTab:CreateToggle({
+    Name = "No Recoil",
+    CurrentValue = false,
+    Flag = "NoRecoil",
+    Callback = function(Value)
+        getgenv().NoRecoil = Value
+        if Value then
+            EnableNoRecoil()
+        end
+    end,
+})
+
+-- RAGE BOT FUNCTIONS
+function StartRageBot()
+    local Players = game:GetService("Players")
+    local LocalPlayer = Players.LocalPlayer
+    local RunService = game:GetService("RunService")
+    local UserInputService = game:GetService("UserInputService")
+    
+    getgenv().RageBot.Active = true
+    
+    local function FindBestTarget()
+        local closest = nil
+        local closestDistance = math.huge
+        
+        for _, player in pairs(Players:GetPlayers()) do
+            if player ~= LocalPlayer and player.Character then
+                local character = player.Character
+                local humanoid = character:FindFirstChild("Humanoid")
+                local rootPart = character:FindFirstChild("HumanoidRootPart")
+                
+                if humanoid and humanoid.Health > 0 and rootPart then
+                    local localRoot = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+                    if localRoot then
+                        local distance = (rootPart.Position - localRoot.Position).Magnitude
+                        if distance < closestDistance then
+                            closestDistance = distance
+                            closest = player
+                        end
+                    end
+                end
+            end
+        end
+        
+        return closest
+    end
+    
+    local connection = RunService.Heartbeat:Connect(function()
+        if not getgenv().RageBot.Enabled then return end
+        
+        local target = FindBestTarget()
+        if target and target.Character then
+            local targetRoot = target.Character:FindFirstChild("HumanoidRootPart")
+            local localChar = LocalPlayer.Character
+            local localRoot = localChar and localChar:FindFirstChild("HumanoidRootPart")
+            
+            if targetRoot and localRoot then
+                -- Flick aim
+                local camera = workspace.CurrentCamera
+                local targetPos = targetRoot.Position
+                local direction = (targetPos - camera.CFrame.Position).Unit
+                
+                camera.CFrame = CFrame.lookAt(camera.CFrame.Position, targetPos)
+                
+                -- Auto shoot
+                if getgenv().AutoShoot then
+                    local tool = LocalPlayer.Character:FindFirstChildOfClass("Tool")
+                    if tool then
+                        tool:Activate()
+                    end
+                end
+            end
+        end
+    end)
+    
+    table.insert(getgenv().RageBot.Connections, connection)
+end
+
+function StopRageBot()
+    getgenv().RageBot.Active = false
+    
+    for _, connection in pairs(getgenv().RageBot.Connections) do
+        if connection then
+            connection:Disconnect()
+        end
+    end
+    
+    getgenv().RageBot.Connections = {}
+end
+
+-- ESP FUNCTIONS
+function StartESP()
+    local Players = game:GetService("Players")
+    local LocalPlayer = Players.LocalPlayer
+    local RunService = game:GetService("RunService")
+    
+    local function CreateESP(player)
+        if player == LocalPlayer then return end
+        
+        local character = player.Character
+        if not character then return end
+        
+        local humanoid = character:FindFirstChild("Humanoid")
+        if not humanoid then return end
+        
+        -- Box ESP
+        if getgenv().BoxESP then
+            local box = Instance.new("BoxHandleAdornment")
+            box.Name = "ESPBox"
+            box.Adornee = character:FindFirstChild("HumanoidRootPart")
+            box.AlwaysOnTop = true
+            box.ZIndex = 5
+            box.Size = Vector3.new(4, 6, 2)
+            box.Transparency = 0.3
+            box.Color3 = Color3.fromRGB(255, 0, 0)
+            box.Parent = character
+        end
+        
+        -- Tracer ESP
+        if getgenv().TracerESP then
+            local tracer = Instance.new("Frame")
+            tracer.Name = "ESPTracer"
+            tracer.BackgroundColor3 = Color3.fromRGB(255, 255, 0)
+            tracer.BorderSizePixel = 0
+            tracer.Size = UDim2.new(0, 2, 0, 100)
+            tracer.Parent = game:GetService("CoreGui")
+        end
+        
+        -- Name ESP
+        if getgenv().NameESP then
+            local billboard = Instance.new("BillboardGui")
+            billboard.Name = "ESPName"
+            billboard.Adornee = character:FindFirstChild("Head")
+            billboard.Size = UDim2.new(0, 100, 0, 50)
+            billboard.StudsOffset = Vector3.new(0, 3, 0)
+            
+            local label = Instance.new("TextLabel")
+            label.Text = player.Name
+            label.TextColor3 = Color3.fromRGB(255, 255, 255)
+            label.BackgroundTransparency = 1
+            label.Size = UDim2.new(1, 0, 1, 0)
+            label.Parent = billboard
+            
+            billboard.Parent = character
+        end
+    end
+    
+    for _, player in pairs(Players:GetPlayers()) do
+        CreateESP(player)
+    end
+    
+    Players.PlayerAdded:Connect(CreateESP)
+end
+
+function StopESP()
+    local Players = game:GetService("Players")
+    
+    for _, player in pairs(Players:GetPlayers()) do
+        if player.Character then
+            for _, obj in pairs(player.Character:GetDescendants()) do
+                if obj.Name == "ESPBox" or obj.Name == "ESPName" then
+                    obj:Destroy()
+                end
+            end
+        end
+    end
+    
+    local coreGui = game:GetService("CoreGui")
+    for _, obj in pairs(coreGui:GetDescendants()) do
+        if obj.Name == "ESPTracer" then
+            obj:Destroy()
+        end
+    end
+end
+
+-- WALL HACK FUNCTIONS
+function EnableWallHack()
+    if getgenv().ThroughWalls then
+        local camera = workspace.CurrentCamera
+        camera:ClearAllChildren()
+    end
+    
+    if getgenv().ChamsEnabled then
+        local Players = game:GetService("Players")
+        local LocalPlayer = Players.LocalPlayer
+        
+        for _, player in pairs(Players:GetPlayers()) do
+            if player ~= LocalPlayer and player.Character then
+                for _, part in pairs(player.Character:GetDescendants()) do
+                    if part:IsA("BasePart") then
+                        part.Material = Enum.Material.ForceField
+                        part.Transparency = 0.5
+                        part.Color = Color3.fromRGB(255, 0, 0)
+                    end
+                end
+            end
+        end
+    end
+end
+
+function DisableWallHack()
+    local Players = game:GetService("Players")
+    
+    for _, player in pairs(Players:GetPlayers()) do
+        if player.Character then
+            for _, part in pairs(player.Character:GetDescendants()) do
+                if part:IsA("BasePart") then
+                    part.Material = Enum.Material.Plastic
+                    part.Transparency = 0
+                    part.Color = Color3.fromRGB(255, 255, 255)
+                end
+            end
+        end
+    end
+end
+
+function EnableChams()
+    DisableWallHack()
+    EnableWallHack()
+end
+
+function DisableChams()
+    DisableWallHack()
+end
+
+-- BYPASS FUNCTIONS
+function EnableAntiCheatBypass()
+    local mt = getrawmetatable(game)
+    setreadonly(mt, false)
+    
+    local oldIndex = mt.__index
+    mt.__index = newcclosure(function(self, key)
+        local keyStr = tostring(key):lower()
+        
+        if keyStr:find("cheat") or keyStr:find("hack") or keyStr:find("aimbot") or keyStr:find("esp") then
+            return nil
+        end
+        
+        return oldIndex(self, key)
+    end)
+    
+    setreadonly(mt, true)
+end
+
+function EnableAntiAim()
+    local RunService = game:GetService("RunService")
+    local Players = game:GetService("Players")
+    local LocalPlayer = Players.LocalPlayer
+    
+    local connection = RunService.Heartbeat:Connect(function()
+        if not getgenv().AntiAim then return end
+        
+        local character = LocalPlayer.Character
+        if not character then return end
+        
+        local rootPart = character:FindFirstChild("HumanoidRootPart")
+        if not rootPart then return end
+        
+        -- Randomize rotation to avoid aim detection
+        rootPart.CFrame = rootPart.CFrame * CFrame.Angles(
+            math.random(-10, 10) * math.pi/180,
+            math.random(-10, 10) * math.pi/180,
+            math.random(-10, 10) * math.pi/180
+        )
+    end)
+    
+    table.insert(getgenv().RageBot.Connections, connection)
+end
+
+function EnableNoRecoil()
+    local Players = game:GetService("Players")
+    local LocalPlayer = Players.LocalPlayer
+    
+    LocalPlayer.CharacterAdded:Connect(function(character)
+        local humanoid = character:WaitForChild("Humanoid")
+        
+        humanoid:GetPropertyChangedSignal("CameraOffset"):Connect(function()
+            if getgenv().NoRecoil then
+                humanoid.CameraOffset = Vector3.new(0, 0, 0)
+            end
+        end)
+    end)
+end
+
+-- INITIALIZE
+getgenv().FlickSpeed = 1
+getgenv().AutoShoot = false
+getgenv().InstantKill = false
+getgenv().ESPEnabled = false
+getgenv().BoxESP = false
+getgenv().TracerESP = false
+getgenv().NameESP = false
+getgenv().WallHackEnabled = false
+getgenv().ThroughWalls = false
+getgenv().ChamsEnabled = false
+getgenv().AntiCheatBypass = false
+getgenv().AntiAim = false
+getgenv().NoRecoil = false
+
+Rayfield:Notify({
+    Title = "Flick Rage Bot Loaded",
+    Content = "Enable features carefully!",
+    Duration = 5,
+})
