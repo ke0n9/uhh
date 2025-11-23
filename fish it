@@ -1,0 +1,408 @@
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+
+local Window = Rayfield:CreateWindow({
+    Name = "Fish It Hacks",
+    LoadingTitle = "Fish It Hacks",
+    LoadingSubtitle = "by Colin",
+    ConfigurationSaving = {
+        Enabled = true,
+        FolderName = "FishItHacks",
+        FileName = "Config"
+    },
+    Discord = {
+        Enabled = false,
+        Invite = "noinvite",
+        RememberJoins = true
+    },
+    KeySystem = false,
+})
+
+local MainTab = Window:CreateTab("Fishing", 4483362458)
+local AutoTab = Window:CreateTab("Auto Farm", 4483362458)
+local BlatantTab = Window:CreateTab("Blatant", 4483362458)
+
+getgenv().FishHacks = {
+    Active = false,
+    Connections = {}
+}
+
+-- FISHING FEATURES
+local FishingSection = MainTab:CreateSection("Fishing Hacks")
+
+local InstantFishToggle = MainTab:CreateToggle({
+    Name = "Instant Fishing",
+    CurrentValue = false,
+    Flag = "InstantFish",
+    Callback = function(Value)
+        getgenv().InstantFish = Value
+        if Value then
+            EnableInstantFishing()
+        end
+    end,
+})
+
+local NoCastDelay = MainTab:CreateToggle({
+    Name = "No Cast Delay",
+    CurrentValue = false,
+    Flag = "NoCastDelay",
+    Callback = function(Value)
+        getgenv().NoCastDelay = Value
+    end,
+})
+
+local AutoHook = MainTab:CreateToggle({
+    Name = "Auto Hook",
+    CurrentValue = false,
+    Flag = "AutoHook",
+    Callback = function(Value)
+        getgenv().AutoHook = Value
+    end,
+})
+
+-- AUTO FARM FEATURES
+local AutoSection = AutoTab:CreateSection("Auto Farm")
+
+local AutoSellToggle = AutoTab:CreateToggle({
+    Name = "Auto Sell Fish",
+    CurrentValue = false,
+    Flag = "AutoSell",
+    Callback = function(Value)
+        getgenv().AutoSell = Value
+        if Value then
+            StartAutoSell()
+        else
+            StopAutoSell()
+        end
+    end,
+})
+
+local AutoBuyRodToggle = AutoTab:CreateToggle({
+    Name = "Auto Buy Best Rod",
+    CurrentValue = false,
+    Flag = "AutoBuyRod",
+    Callback = function(Value)
+        getgenv().AutoBuyRod = Value
+        if Value then
+            StartAutoBuyRod()
+        else
+            StopAutoBuyRod()
+        end
+    end,
+})
+
+local SellDelay = AutoTab:CreateSlider({
+    Name = "Sell Delay",
+    Range = {1, 30},
+    Increment = 1,
+    Suffix = "s",
+    CurrentValue = 5,
+    Flag = "SellDelay",
+    Callback = function(Value)
+        getgenv().SellDelay = Value
+    end,
+})
+
+-- BLATANT FEATURES
+local BlatantSection = BlatantTab:CreateSection("Blatant Hacks")
+
+local InfiniteMoneyToggle = BlatantTab:CreateToggle({
+    Name = "Infinite Money",
+    CurrentValue = false,
+    Flag = "InfiniteMoney",
+    Callback = function(Value)
+        getgenv().InfiniteMoney = Value
+        if Value then
+            EnableInfiniteMoney()
+        end
+    end,
+})
+
+local NoClipToggle = BlatantTab:CreateToggle({
+    Name = "No Clip",
+    CurrentValue = false,
+    Flag = "NoClip",
+    Callback = function(Value)
+        getgenv().NoClip = Value
+        if Value then
+            EnableNoClip()
+        else
+            DisableNoClip()
+        end
+    end,
+})
+
+local TeleportBestSpot = BlatantTab:CreateButton({
+    Name = "Teleport to Best Spot",
+    Callback = function()
+        TeleportToBestFishingSpot()
+    end,
+})
+
+local WalkSpeed = BlatantTab:CreateSlider({
+    Name = "Walk Speed",
+    Range = {16, 200},
+    Increment = 5,
+    Suffix = "studs/s",
+    CurrentValue = 16,
+    Flag = "WalkSpeed",
+    Callback = function(Value)
+        getgenv().WalkSpeed = Value
+        SetWalkSpeed(Value)
+    end,
+})
+
+-- FISHING FUNCTIONS
+function EnableInstantFishing()
+    local Players = game:GetService("Players")
+    local LocalPlayer = Players.LocalPlayer
+    local RunService = game:GetService("RunService")
+    
+    local connection = RunService.Heartbeat:Connect(function()
+        if not getgenv().InstantFish then return end
+        
+        local character = LocalPlayer.Character
+        if not character then return end
+        
+        -- Find fishing rod
+        local rod = character:FindFirstChildOfClass("Tool")
+        if rod then
+            -- Check if fishing
+            local fishingValue = rod:FindFirstChild("Fishing")
+            if fishingValue and fishingValue.Value then
+                -- Instant catch
+                local catchEvent = rod:FindFirstChild("CatchFish")
+                if catchEvent and catchEvent:IsA("RemoteEvent") then
+                    catchEvent:FireServer(true)
+                end
+            end
+            
+            -- No cast delay
+            if getgenv().NoCastDelay then
+                local castDelay = rod:FindFirstChild("CastDelay")
+                if castDelay then
+                    castDelay.Value = 0
+                end
+            end
+            
+            -- Auto hook
+            if getgenv().AutoHook then
+                local fishOnLine = rod:FindFirstChild("FishOnLine")
+                if fishOnLine and fishOnLine.Value then
+                    local hookEvent = rod:FindFirstChild("HookFish")
+                    if hookEvent and hookEvent:IsA("RemoteEvent") then
+                        hookEvent:FireServer()
+                    end
+                end
+            end
+        end
+    end)
+    
+    table.insert(getgenv().FishHacks.Connections, connection)
+end
+
+-- AUTO SELL FUNCTIONS
+function StartAutoSell()
+    local RunService = game:GetService("RunService")
+    
+    local connection = RunService.Heartbeat:Connect(function()
+        if not getgenv().AutoSell then return end
+        
+        -- Find sell area or NPC
+        local sellPart = workspace:FindFirstChild("Sell") or workspace:FindFirstChild("SellArea")
+        if sellPart then
+            local character = game.Players.LocalPlayer.Character
+            if character then
+                local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
+                if humanoidRootPart then
+                    -- Teleport to sell area
+                    humanoidRootPart.CFrame = sellPart.CFrame
+                    
+                    -- Wait a bit then sell
+                    task.wait(getgenv().SellDelay or 5)
+                    
+                    -- Trigger sell
+                    local sellEvent = game:GetService("ReplicatedStorage"):FindFirstChild("SellFish")
+                    if sellEvent and sellEvent:IsA("RemoteEvent") then
+                        sellEvent:FireServer()
+                    end
+                end
+            end
+        end
+    end)
+    
+    table.insert(getgenv().FishHacks.Connections, connection)
+end
+
+function StopAutoSell()
+    -- Connection will be stopped when toggled off
+end
+
+-- AUTO BUY ROD FUNCTIONS
+function StartAutoBuyRod()
+    local RunService = game:GetService("RunService")
+    
+    local connection = RunService.Heartbeat:Connect(function()
+        if not getgenv().AutoBuyRod then return end
+        
+        -- Find rod shop
+        local rodShop = workspace:FindFirstChild("RodShop") or workspace:FindFirstChild("FishingShop")
+        if rodShop then
+            local character = game.Players.LocalPlayer.Character
+            if character then
+                local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
+                if humanoidRootPart then
+                    -- Check current rod
+                    local currentRod = character:FindFirstChildOfClass("Tool")
+                    if not currentRod or currentRod.Name == "Basic Rod" then
+                        -- Teleport to shop
+                        humanoidRootPart.CFrame = rodShop.CFrame
+                        
+                        -- Buy best rod
+                        task.wait(1)
+                        BuyBestRod()
+                    end
+                end
+            end
+        end
+    end)
+    
+    table.insert(getgenv().FishHacks.Connections, connection)
+end
+
+function StopAutoBuyRod()
+    -- Connection will be stopped when toggled off
+end
+
+function BuyBestRod()
+    -- Try to buy the best available rod
+    local buyEvent = game:GetService("ReplicatedStorage"):FindFirstChild("BuyRod")
+    if buyEvent and buyEvent:IsA("RemoteEvent") then
+        -- Try different rod tiers
+        local rods = {"Pro Rod", "Golden Rod", "Diamond Rod", "Legendary Rod"}
+        
+        for _, rodName in pairs(rods) do
+            pcall(function()
+                buyEvent:FireServer(rodName)
+            end)
+            task.wait(0.5)
+        end
+    end
+end
+
+-- BLATANT FUNCTIONS
+function EnableInfiniteMoney()
+    local RunService = game:GetService("RunService")
+    
+    local connection = RunService.Heartbeat:Connect(function()
+        if not getgenv().InfiniteMoney then return end
+        
+        -- Find player stats
+        local player = game.Players.LocalPlayer
+        local leaderstats = player:FindFirstChild("leaderstats")
+        if leaderstats then
+            local money = leaderstats:FindFirstChild("Money") or leaderstats:FindFirstChild("Cash")
+            if money then
+                money.Value = 999999
+            end
+        end
+    end)
+    
+    table.insert(getgenv().FishHacks.Connections, connection)
+end
+
+function EnableNoClip()
+    local RunService = game:GetService("RunService")
+    
+    local connection = RunService.Stepped:Connect(function()
+        if not getgenv().NoClip then return end
+        
+        local character = game.Players.LocalPlayer.Character
+        if character then
+            for _, part in pairs(character:GetDescendants()) do
+                if part:IsA("BasePart") then
+                    part.CanCollide = false
+                end
+            end
+        end
+    end)
+    
+    table.insert(getgenv().FishHacks.Connections, connection)
+end
+
+function DisableNoClip()
+    local character = game.Players.LocalPlayer.Character
+    if character then
+        for _, part in pairs(character:GetDescendants()) do
+            if part:IsA("BasePart") then
+                part.CanCollide = true
+            end
+        end
+    end
+end
+
+function TeleportToBestFishingSpot()
+    local character = game.Players.LocalPlayer.Character
+    if not character then return end
+    
+    local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
+    if not humanoidRootPart then return end
+    
+    -- Look for deep water areas (common best spots)
+    local waterParts = {}
+    
+    for _, part in pairs(workspace:GetDescendants()) do
+        if part:IsA("Part") and part.Name:lower():find("water") then
+            if part.Size.Y > 10 then -- Deep water
+                table.insert(waterParts, part)
+            end
+        end
+    end
+    
+    if #waterParts > 0 then
+        local bestSpot = waterParts[1]
+        humanoidRootPart.CFrame = bestSpot.CFrame + Vector3.new(0, 5, 0)
+    end
+end
+
+function SetWalkSpeed(speed)
+    local character = game.Players.LocalPlayer.Character
+    if character then
+        local humanoid = character:FindFirstChild("Humanoid")
+        if humanoid then
+            humanoid.WalkSpeed = speed
+        end
+    end
+end
+
+-- CLEANUP FUNCTION
+function StopAllHacks()
+    getgenv().FishHacks.Active = false
+    
+    for _, connection in pairs(getgenv().FishHacks.Connections) do
+        if connection then
+            connection:Disconnect()
+        end
+    end
+    
+    getgenv().FishHacks.Connections = {}
+    
+    DisableNoClip()
+    SetWalkSpeed(16)
+end
+
+-- INITIALIZE
+getgenv().InstantFish = false
+getgenv().NoCastDelay = false
+getgenv().AutoHook = false
+getgenv().AutoSell = false
+getgenv().AutoBuyRod = false
+getgenv().SellDelay = 5
+getgenv().InfiniteMoney = false
+getgenv().NoClip = false
+getgenv().WalkSpeed = 16
+
+Rayfield:Notify({
+    Title = "Fish It Hacks Loaded",
+    Content = "Be careful with blatant features!",
+    Duration = 5,
+})
