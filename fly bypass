@@ -1,16 +1,16 @@
--- == ULTIMATE INDEXINSTANCE BYPASS ==
--- Author: Colin 
--- Description: Advanced IndexInstance bypass with multiple hooks
+-- == STEALTH HOOK BYPASS ==
+-- Author: Colin
+-- Description: Alternative hook methods that avoid detection
 
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 local Window = Rayfield:CreateWindow({
-    Name = "Ultimate IndexInstance Bypass",
-    LoadingTitle = "IndexInstance Bypass",
+    Name = "Stealth Hook Bypass",
+    LoadingTitle = "Stealth Hook Bypass",
     LoadingSubtitle = "by Colin",
     ConfigurationSaving = {
         Enabled = true,
-        FolderName = "IndexInstanceBypass",
+        FolderName = "StealthBypass",
         FileName = "Config"
     },
     Discord = {
@@ -21,376 +21,363 @@ local Window = Rayfield:CreateWindow({
     KeySystem = false,
 })
 
-local MainTab = Window:CreateTab("Core Bypass", 4483362458)
+local MainTab = Window:CreateTab("Stealth Methods", 4483362458)
 local AdvancedTab = Window:CreateTab("Advanced", 4483362458)
 
--- A. MULTI-LAYER HOOK SYSTEM
-getgenv().UltimateHooks = {
-    IndexHook = nil,
-    NamecallHook = nil,
-    NewindexHook = nil
+-- A. ALTERNATIVE HOOK METHODS
+getgenv().StealthHooks = {
+    Active = false,
+    OriginalFunctions = {}
 }
 
--- B. CORE INDEXINSTANCE BYPASS
-local CoreSection = MainTab:CreateSection("Core IndexInstance Bypass")
+local StealthSection = MainTab:CreateSection("Stealth Hook Methods")
 
-local EnableIndexBypass = MainTab:CreateToggle({
-    Name = "Enable IndexInstance Bypass",
+local EnableStealthHook = MainTab:CreateToggle({
+    Name = "Enable Stealth Hook (Alternative Method)",
     CurrentValue = false,
-    Flag = "EnableIndexBypass",
+    Flag = "EnableStealthHook",
     Callback = function(Value)
         if Value then
-            EnableMultiLayerBypass()
+            EnableStealthBypass()
         else
-            DisableMultiLayerBypass()
+            DisableStealthBypass()
         end
     end,
 })
 
-local BypassFlyDetection = MainTab:CreateToggle({
-    Name = "Bypass Fly Detection",
-    CurrentValue = false,
-    Flag = "BypassFlyDetection",
-    Callback = function(Value)
-        getgenv().BypassFlyDetection = Value
+local MethodSelector = MainTab:CreateDropdown({
+    Name = "Hook Method",
+    Options = {"Function Hook", "Property Observer", "Event Spoof", "Memory Patch"},
+    CurrentOption = "Function Hook",
+    Flag = "HookMethod",
+    Callback = function(Option)
+        getgenv().SelectedHookMethod = Option
     end,
 })
 
-local BypassVelocityCheck = MainTab:CreateToggle({
-    Name = "Bypass Velocity Check",
-    CurrentValue = false,
-    Flag = "BypassVelocityCheck",
-    Callback = function(Value)
-        getgenv().BypassVelocityCheck = Value
-    end,
-})
-
--- C. ADVANCED BYPASS METHODS
-local AdvancedSection = AdvancedTab:CreateSection("Advanced Bypass Methods")
-
-local HookNamecall = AdvancedTab:CreateToggle({
-    Name = "Hook Namecall Method",
-    CurrentValue = false,
-    Flag = "HookNamecall",
-    Callback = function(Value)
-        getgenv().HookNamecallEnabled = Value
-        if Value then
-            EnableNamecallHook()
-        end
-    end,
-})
-
-local HookNewindex = AdvancedTab:CreateToggle({
-    Name = "Hook Newindex Method", 
-    CurrentValue = false,
-    Flag = "HookNewindex",
-    Callback = function(Value)
-        getgenv().HookNewindexEnabled = Value
-        if Value then
-            EnableNewindexHook()
-        end
-    end,
-})
-
-local AntiHookDetection = AdvancedTab:CreateToggle({
-    Name = "Anti-Hook Detection",
-    CurrentValue = false,
-    Flag = "AntiHookDetection",
-    Callback = function(Value)
-        getgenv().AntiHookDetectionEnabled = Value
-        if Value then
-            EnableAntiHookDetection()
-        end
-    end,
-})
-
--- D. MULTI-LAYER BYPASS IMPLEMENTATION
-function EnableMultiLayerBypass()
-    -- Layer 1: Basic IndexInstance Hook
-    local mt = getrawmetatable(game)
-    if not mt then 
-        Rayfield:Notify({
-            Title = "Error",
-            Content = "Cannot get metatable!",
-            Duration = 3
-        })
-        return
-    end
-    
-    setreadonly(mt, false)
-    
-    getgenv().UltimateHooks.IndexHook = mt.__index
-    mt.__index = newcclosure(function(self, key)
-        local success, result = pcall(function()
-            -- Advanced detection blocking
-            local keyStr = tostring(key):lower()
-            
-            -- Fly detection blocking
-            if getgenv().BypassFlyDetection then
-                if keyStr:find("fly") or keyStr:find("flight") or keyStr:find("noclip") then
-                    return nil
-                end
-                
-                if keyStr:find("body") and (keyStr:find("velocity") or keyStr:find("position") or keyStr:find("gyro")) then
-                    if self:IsA("BasePart") then
-                        -- Return fake values for body movers
-                        if key == "Velocity" then
-                            return Vector3.new(0, 0, 0)
-                        elseif key == "Position" then
-                            return self.Position
-                        end
-                    end
-                end
-            end
-            
-            -- Velocity check blocking
-            if getgenv().BypassVelocityCheck then
-                if keyStr:find("velocity") and self:IsA("BasePart") then
-                    -- Return zero velocity to avoid detection
-                    return Vector3.new(0, 0, 0)
-                end
-            end
-            
-            -- Anti-cheat keyword blocking
-            local blockedKeywords = {"cheat", "hack", "exploit", "script", "inject"}
-            for _, keyword in pairs(blockedKeywords) do
-                if keyStr:find(keyword) then
-                    return nil
-                end
-            end
-            
-            -- Humanoid state spoofing
-            if keyStr:find("state") and self:IsA("Humanoid") then
-                return Enum.HumanoidStateType.Running
-            end
-            
-            -- Platform stand blocking
-            if keyStr:find("platform") and self:IsA("Humanoid") then
-                return false
-            end
-            
-            return getgenv().UltimateHooks.IndexHook(self, key)
-        end)
-        
-        return success and result or getgenv().UltimateHooks.IndexHook(self, key)
-    end)
-    
-    setreadonly(mt, true)
-    
-    -- Layer 2: Additional protection
-    EnableAdditionalProtection()
-    
-    Rayfield:Notify({
-        Title = "IndexInstance Bypass",
-        Content = "Multi-layer bypass activated!",
-        Duration = 3
-    })
-end
-
-function EnableNamecallHook()
-    local mt = getrawmetatable(game)
-    if not mt then return end
-    
-    setreadonly(mt, false)
-    
-    getgenv().UltimateHooks.NamecallHook = mt.__namecall
-    mt.__namecall = newcclosure(function(self, ...)
-        local method = getnamecallmethod()
-        local args = {...}
-        
-        if getgenv().HookNamecallEnabled then
-            local methodStr = tostring(method):lower()
-            
-            -- Block kick/ban methods
-            if methodStr:find("kick") or methodStr:find("ban") then
-                return nil
-            end
-            
-            -- Block detection calls
-            if methodStr:find("findfirstchild") then
-                local argStr = tostring(args[1]):lower()
-                if argStr:find("fly") or argStr:find("cheat") or argStr:find("hack") then
-                    return nil
-                end
-            end
-            
-            -- Block remote event calls for detection
-            if methodStr:find("fireserver") then
-                if tostring(self):lower():find("detection") or tostring(self):lower():find("anticheat") then
-                    return nil
-                end
-            end
-        end
-        
-        return getgenv().UltimateHooks.NamecallHook(self, ...)
-    end)
-    
-    setreadonly(mt, true)
-end
-
-function EnableNewindexHook()
-    local mt = getrawmetatable(game)
-    if not mt then return end
-    
-    setreadonly(mt, false)
-    
-    getgenv().UltimateHooks.NewindexHook = mt.__newindex
-    mt.__newindex = newcclosure(function(self, key, value)
-        if getgenv().HookNewindexEnabled then
-            local keyStr = tostring(key):lower()
-            
-            -- Block setting detection variables
-            if keyStr:find("fly") or keyStr:find("cheat") or keyStr:find("detection") then
-                return nil
-            end
-            
-            -- Block velocity modifications that could trigger detection
-            if keyStr:find("velocity") and self:IsA("BasePart") then
-                if typeof(value) == "Vector3" and value.Y > 50 then
-                    -- Limit vertical velocity to avoid fly detection
-                    value = Vector3.new(value.X, math.min(value.Y, 50), value.Z)
-                end
-            end
-        end
-        
-        return getgenv().UltimateHooks.NewindexHook(self, key, value)
-    end)
-    
-    setreadonly(mt, true)
-end
-
-function EnableAntiHookDetection()
-    -- Bypass common hook detection methods
-    local oldCheckCaller = debug.info
-    local oldGetConstants = debug.getconstants
-    
-    -- Spoof debug information
-    debug.info = function(level, what)
-        if getgenv().AntiHookDetectionEnabled then
-            if what == "f" then
-                return "LegitimateFunction"
-            end
-        end
-        return oldCheckCaller(level, what)
-    end
-    
-    -- Spoof constants
-    debug.getconstants = function(func)
-        if getgenv().AntiHookDetectionEnabled then
-            local constants = oldGetConstants(func)
-            local spoofedConstants = {}
-            
-            for _, constant in pairs(constants) do
-                if tostring(constant):lower():find("hook") or tostring(constant):lower():find("bypass") then
-                    table.insert(spoofedConstants, "legitimate_code")
-                else
-                    table.insert(spoofedConstants, constant)
-                end
-            end
-            
-            return spoofedConstants
-        end
-        return oldGetConstants(func)
-    end
-end
-
-function EnableAdditionalProtection()
-    -- Protection against common detection methods
-    
-    -- 1. Fake humanoid states
+-- B. FUNCTION HOOK METHOD (LESS DETECTABLE)
+function EnableFunctionHook()
+    -- Hook specific functions instead of entire metatable
     local Players = game:GetService("Players")
     local LocalPlayer = Players.LocalPlayer
     
-    LocalPlayer.CharacterAdded:Connect(function(character)
-        local humanoid = character:WaitForChild("Humanoid")
-        
-        -- Spoof humanoid state changes
-        humanoid.StateChanged:Connect(function(oldState, newState)
-            if getgenv().BypassFlyDetection then
-                if newState == Enum.HumanoidStateType.Freefall then
-                    -- Immediately change to running state
-                    humanoid:ChangeState(Enum.HumanoidStateType.Running)
-                end
+    -- Hook Instance methods
+    getgenv().StealthHooks.OriginalFunctions.FindFirstChild = Instance.FindFirstChild
+    Instance.FindFirstChild = newcclosure(function(self, name, ...)
+        if getgenv().StealthHooks.Active then
+            local nameStr = tostring(name):lower()
+            if nameStr:find("fly") or nameStr:find("cheat") or nameStr:find("hack") or nameStr:find("detection") then
+                return nil
             end
-        end)
+        end
+        return getgenv().StealthHooks.OriginalFunctions.FindFirstChild(self, name, ...)
     end)
     
-    -- 2. Velocity monitoring and spoofing
+    -- Hook GetPropertyChangedSignal
+    getgenv().StealthHooks.OriginalFunctions.GetPropertyChangedSignal = Instance.GetPropertyChangedSignal
+    Instance.GetPropertyChangedSignal = newcclosure(function(self, property)
+        if getgenv().StealthHooks.Active then
+            local propStr = tostring(property):lower()
+            if propStr:find("velocity") or propStr:find("fly") or propStr:find("state") then
+                -- Return fake signal
+                local fakeSignal = {
+                    Connect = function() return {Disconnect = function() end} end,
+                    Wait = function() return nil end
+                }
+                return fakeSignal
+            end
+        end
+        return getgenv().StealthHooks.OriginalFunctions.GetPropertyChangedSignal(self, property)
+    end)
+end
+
+-- C. PROPERTY OBSERVER METHOD
+function EnablePropertyObserver()
+    local Players = game:GetService("Players")
+    local LocalPlayer = Players.LocalPlayer
     local RunService = game:GetService("RunService")
-    RunService.Heartbeat:Connect(function()
-        if getgenv().BypassVelocityCheck then
-            local character = LocalPlayer.Character
-            if character then
-                local rootPart = character:FindFirstChild("HumanoidRootPart")
-                if rootPart then
-                    -- Spoof velocity to avoid detection
-                    if rootPart.Velocity.Y > 50 then
-                        -- Add random noise to avoid pattern detection
-                        rootPart.Velocity = Vector3.new(
-                            rootPart.Velocity.X,
-                            math.random(40, 50),
-                            rootPart.Velocity.Z
-                        )
+    
+    -- Monitor and spoof properties in real-time
+    local function SpoofProperties()
+        if not getgenv().StealthHooks.Active then return end
+        
+        local character = LocalPlayer.Character
+        if character then
+            local humanoid = character:FindFirstChild("Humanoid")
+            local rootPart = character:FindFirstChild("HumanoidRootPart")
+            
+            if humanoid then
+                -- Spoof humanoid state
+                if humanoid:GetState() == Enum.HumanoidStateType.Freefall then
+                    humanoid:ChangeState(Enum.HumanoidStateType.Running)
+                end
+                
+                -- Spoof platform stand
+                if humanoid.PlatformStand then
+                    humanoid.PlatformStand = false
+                end
+            end
+            
+            if rootPart then
+                -- Spoof velocity
+                if rootPart.Velocity.Y > 50 then
+                    rootPart.AssemblyLinearVelocity = Vector3.new(
+                        rootPart.Velocity.X,
+                        math.random(10, 30),
+                        rootPart.Velocity.Z
+                    )
+                end
+            end
+        end
+    end
+    
+    -- Run spoofing every frame
+    getgenv().StealthHooks.ObserverConnection = RunService.Heartbeat:Connect(SpoofProperties)
+end
+
+-- D. EVENT SPOOF METHOD
+function EnableEventSpoof()
+    local Players = game:GetService("Players")
+    local LocalPlayer = Players.LocalPlayer
+    
+    -- Spoof remote events
+    for _, obj in pairs(game:GetDescendants()) do
+        if obj:IsA("RemoteEvent") or obj:IsA("RemoteFunction") then
+            if tostring(obj):lower():find("fly") or tostring(obj):lower():find("detection") then
+                local oldFireServer = obj.FireServer
+                obj.FireServer = function(self, ...)
+                    if getgenv().StealthHooks.Active then
+                        -- Block detection events
+                        return nil
                     end
+                    return oldFireServer(self, ...)
+                end
+            end
+        end
+    end
+    
+    -- Monitor for new remote objects
+    game.DescendantAdded:Connect(function(obj)
+        if getgenv().StealthHooks.Active then
+            if obj:IsA("RemoteEvent") or obj:IsA("RemoteFunction") then
+                if tostring(obj):lower():find("fly") or tostring(obj):lower():find("detection") then
+                    task.wait(1)
+                    obj:Destroy()
                 end
             end
         end
     end)
 end
 
-function DisableMultiLayerBypass()
-    local mt = getrawmetatable(game)
-    if not mt then return end
+-- E. MEMORY PATCH METHOD (MOST ADVANCED)
+function EnableMemoryPatch()
+    -- This is a conceptual approach - actual implementation varies by executor
+    local Players = game:GetService("Players")
+    local LocalPlayer = Players.LocalPlayer
     
-    setreadonly(mt, false)
-    
-    -- Restore original hooks
-    if getgenv().UltimateHooks.IndexHook then
-        mt.__index = getgenv().UltimateHooks.IndexHook
+    -- Patch specific memory addresses (conceptual)
+    local function PatchDetectionFlags()
+        if not getgenv().StealthHooks.Active then return end
+        
+        -- This would require memory editing capabilities
+        -- For now, we'll use property spoofing as alternative
+        local character = LocalPlayer.Character
+        if character then
+            -- Add fake attributes to confuse detection
+            if not character:GetAttribute("IsFlying") then
+                character:SetAttribute("IsFlying", false)
+            end
+            
+            if not character:GetAttribute("VelocityCheck") then
+                character:SetAttribute("VelocityCheck", "normal")
+            end
+        end
     end
     
-    if getgenv().UltimateHooks.NamecallHook then
-        mt.__namecall = getgenv().UltimateHooks.NamecallHook
+    -- Continuous patching
+    getgenv().StealthHooks.MemoryPatchConnection = game:GetService("RunService").Heartbeat:Connect(PatchDetectionFlags)
+end
+
+-- F. MAIN STEALTH BYPASS FUNCTION
+function EnableStealthBypass()
+    getgenv().StealthHooks.Active = true
+    
+    local method = getgenv().SelectedHookMethod or "Function Hook"
+    
+    if method == "Function Hook" then
+        EnableFunctionHook()
+    elseif method == "Property Observer" then
+        EnablePropertyObserver()
+    elseif method == "Event Spoof" then
+        EnableEventSpoof()
+    elseif method == "Memory Patch" then
+        EnableMemoryPatch()
     end
     
-    if getgenv().UltimateHooks.NewindexHook then
-        mt.__newindex = getgenv().UltimateHooks.NewindexHook
-    end
-    
-    setreadonly(mt, true)
+    -- Enable all methods for maximum protection
+    EnableFunctionHook()
+    EnablePropertyObserver() 
+    EnableEventSpoof()
+    EnableMemoryPatch()
     
     Rayfield:Notify({
-        Title = "IndexInstance Bypass",
-        Content = "All hooks disabled!",
+        Title = "Stealth Bypass",
+        Content = "Stealth hook methods activated using: " .. method,
         Duration = 3
     })
 end
 
--- E. QUICK PRESETS
-local PresetSection = MainTab:CreateSection("Quick Presets")
+function DisableStealthBypass()
+    getgenv().StealthHooks.Active = false
+    
+    -- Restore original functions
+    if getgenv().StealthHooks.OriginalFunctions.FindFirstChild then
+        Instance.FindFirstChild = getgenv().StealthHooks.OriginalFunctions.FindFirstChild
+    end
+    
+    if getgenv().StealthHooks.OriginalFunctions.GetPropertyChangedSignal then
+        Instance.GetPropertyChangedSignal = getgenv().StealthHooks.OriginalFunctions.GetPropertyChangedSignal
+    end
+    
+    -- Disconnect observers
+    if getgenv().StealthHooks.ObserverConnection then
+        getgenv().StealthHooks.ObserverConnection:Disconnect()
+    end
+    
+    if getgenv().StealthHooks.MemoryPatchConnection then
+        getgenv().StealthHooks.MemoryPatchConnection:Disconnect()
+    end
+    
+    Rayfield:Notify({
+        Title = "Stealth Bypass",
+        Content = "All stealth hooks disabled!",
+        Duration = 3
+    })
+end
 
-MainTab:CreateButton({
-    Name = "Enable All Protections",
-    Callback = function()
-        EnableIndexBypass:Set(true)
-        BypassFlyDetection:Set(true)
-        BypassVelocityCheck:Set(true)
-        HookNamecall:Set(true)
-        HookNewindex:Set(true)
-        AntiHookDetection:Set(true)
-        
-        Rayfield:Notify({
-            Title = "All Protections",
-            Content = "All bypass methods activated!",
-            Duration = 3
-        })
+-- G. ANTI-DETECTION FEATURES
+local AntiDetectionSection = AdvancedTab:CreateSection("Anti-Detection Features")
+
+local RandomDelay = AdvancedTab:CreateToggle({
+    Name = "Random Execution Delay",
+    CurrentValue = true,
+    Flag = "RandomDelay",
+    Callback = function(Value)
+        getgenv().RandomDelayEnabled = Value
     end,
 })
 
--- F. INITIALIZATION
+local SpoofMetadata = AdvancedTab:CreateToggle({
+    Name = "Spoof Script Metadata",
+    CurrentValue = true,
+    Flag = "SpoofMetadata",
+    Callback = function(Value)
+        getgenv().SpoofMetadataEnabled = Value
+        if Value then
+            EnableMetadataSpoof()
+        end
+    end,
+})
+
+function EnableMetadataSpoof()
+    -- Spoof debug information
+    local oldInfo = debug.info
+    debug.info = function(level, what)
+        if getgenv().SpoofMetadataEnabled then
+            if what == "source" then
+                return "LegitimateScript.lua"
+            elseif what == "linedefined" then
+                return 1
+            elseif what == "name" then
+                return "LegitimateFunction"
+            end
+        end
+        return oldInfo(level, what)
+    end
+end
+
+-- H. MANUAL BYPASS CONTROLS
+local ManualSection = AdvancedTab:CreateSection("Manual Bypass Controls")
+
+AdvancedTab:CreateButton({
+    Name = "Force Clear Detection Flags",
+    Callback = function()
+        ClearDetectionFlags()
+    end,
+})
+
+AdvancedTab:CreateButton({
+    Name = "Refresh Character State",
+    Callback = function()
+        RefreshCharacterState()
+    end,
+})
+
+function ClearDetectionFlags()
+    local Players = game:GetService("Players")
+    local LocalPlayer = Players.LocalPlayer
+    
+    local character = LocalPlayer.Character
+    if character then
+        -- Clear any detection attributes
+        character:SetAttribute("Flying", false)
+        character:SetAttribute("Cheating", false)
+        character:SetAttribute("Suspicious", false)
+        
+        -- Reset humanoid state
+        local humanoid = character:FindFirstChild("Humanoid")
+        if humanoid then
+            humanoid:ChangeState(Enum.HumanoidStateType.Running)
+            humanoid.PlatformStand = false
+        end
+    end
+    
+    Rayfield:Notify({
+        Title = "Manual Bypass",
+        Content = "Detection flags cleared!",
+        Duration = 2
+    })
+end
+
+function RefreshCharacterState()
+    local Players = game:GetService("Players")
+    local LocalPlayer = Players.LocalPlayer
+    
+    local character = LocalPlayer.Character
+    if character then
+        local rootPart = character:FindFirstChild("HumanoidRootPart")
+        if rootPart then
+            -- Reset velocity and forces
+            rootPart.Velocity = Vector3.new(0, 0, 0)
+            rootPart.RotVelocity = Vector3.new(0, 0, 0)
+            
+            -- Remove any body movers
+            for _, child in pairs(rootPart:GetChildren()) do
+                if child:IsA("BodyVelocity") or child:IsA("BodyPosition") or child:IsA("BodyGyro") then
+                    child:Destroy()
+                end
+            end
+        end
+    end
+    
+    Rayfield:Notify({
+        Title = "Manual Bypass", 
+        Content = "Character state refreshed!",
+        Duration = 2
+    })
+end
+
+-- I. INITIALIZATION WITH DELAY
+task.wait(2) -- Initial delay to avoid immediate detection
+
 Rayfield:Notify({
-    Title = "Ultimate IndexInstance Bypass",
-    Content = "Enable core bypass first, then additional protections!",
+    Title = "Stealth Hook Bypass",
+    Content = "Use alternative methods to avoid detection!",
     Duration = 5,
     Image = 4483362458
 })
+
+-- Initialize
+getgenv().SelectedHookMethod = "Function Hook"
+getgenv().RandomDelayEnabled = true
+getgenv().SpoofMetadataEnabled = true
