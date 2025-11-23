@@ -19,7 +19,6 @@ local Window = Rayfield:CreateWindow({
 
 local MainTab = Window:CreateTab("Combat", 4483362458)
 local VisualTab = Window:CreateTab("Visual", 4483362458)
-local BypassTab = Window:CreateTab("Bypass", 4483362458)
 
 getgenv().RageBot = {
     Active = false,
@@ -53,15 +52,6 @@ local AutoShoot = MainTab:CreateToggle({
     end,
 })
 
-local InstantKill = MainTab:CreateToggle({
-    Name = "Instant Kill",
-    CurrentValue = false,
-    Flag = "InstantKill",
-    Callback = function(Value)
-        getgenv().InstantKill = Value
-    end,
-})
-
 local FlickSpeed = MainTab:CreateSlider({
     Name = "Flick Speed",
     Range = {0.1, 5},
@@ -71,6 +61,16 @@ local FlickSpeed = MainTab:CreateSlider({
     Flag = "FlickSpeed",
     Callback = function(Value)
         getgenv().FlickSpeed = Value
+    end,
+})
+
+local TargetPart = MainTab:CreateDropdown({
+    Name = "Target Part",
+    Options = {"Head", "HumanoidRootPart", "Torso"},
+    CurrentOption = "Head",
+    Flag = "TargetPart",
+    Callback = function(Option)
+        getgenv().TargetPart = Option
     end,
 })
 
@@ -109,15 +109,6 @@ local TracerESP = VisualTab:CreateToggle({
     end,
 })
 
-local NameESP = VisualTab:CreateToggle({
-    Name = "Name ESP",
-    CurrentValue = false,
-    Flag = "NameESP",
-    Callback = function(Value)
-        getgenv().NameESP = Value
-    end,
-})
-
 -- WALL HACK FEATURES
 local WallSection = VisualTab:CreateSection("Wall Hack")
 
@@ -135,15 +126,6 @@ local WallHackToggle = VisualTab:CreateToggle({
     end,
 })
 
-local ThroughWalls = VisualTab:CreateToggle({
-    Name = "See Through Walls",
-    CurrentValue = false,
-    Flag = "ThroughWalls",
-    Callback = function(Value)
-        getgenv().ThroughWalls = Value
-    end,
-})
-
 local ChamsToggle = VisualTab:CreateToggle({
     Name = "Chams",
     CurrentValue = false,
@@ -154,45 +136,6 @@ local ChamsToggle = VisualTab:CreateToggle({
             EnableChams()
         else
             DisableChams()
-        end
-    end,
-})
-
--- BYPASS FEATURES
-local BypassSection = BypassTab:CreateSection("Bypass")
-
-local AntiCheatBypass = BypassTab:CreateToggle({
-    Name = "Anti-Cheat Bypass",
-    CurrentValue = false,
-    Flag = "AntiCheatBypass",
-    Callback = function(Value)
-        getgenv().AntiCheatBypass = Value
-        if Value then
-            EnableAntiCheatBypass()
-        end
-    end,
-})
-
-local AntiAimToggle = BypassTab:CreateToggle({
-    Name = "Anti-Aim",
-    CurrentValue = false,
-    Flag = "AntiAimEnabled",
-    Callback = function(Value)
-        getgenv().AntiAim = Value
-        if Value then
-            EnableAntiAim()
-        end
-    end,
-})
-
-local NoRecoil = BypassTab:CreateToggle({
-    Name = "No Recoil",
-    CurrentValue = false,
-    Flag = "NoRecoil",
-    Callback = function(Value)
-        getgenv().NoRecoil = Value
-        if Value then
-            EnableNoRecoil()
         end
     end,
 })
@@ -214,12 +157,12 @@ function StartRageBot()
             if player ~= LocalPlayer and player.Character then
                 local character = player.Character
                 local humanoid = character:FindFirstChild("Humanoid")
-                local rootPart = character:FindFirstChild("HumanoidRootPart")
+                local targetPart = character:FindFirstChild(getgenv().TargetPart or "Head")
                 
-                if humanoid and humanoid.Health > 0 and rootPart then
+                if humanoid and humanoid.Health > 0 and targetPart then
                     local localRoot = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
                     if localRoot then
-                        local distance = (rootPart.Position - localRoot.Position).Magnitude
+                        local distance = (targetPart.Position - localRoot.Position).Magnitude
                         if distance < closestDistance then
                             closestDistance = distance
                             closest = player
@@ -232,30 +175,34 @@ function StartRageBot()
         return closest
     end
     
+    local function SimulateMouseClick()
+        if getgenv().AutoShoot then
+            local tool = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Tool")
+            if tool then
+                local remote = tool:FindFirstChildOfClass("RemoteEvent") or tool:FindFirstChildOfClass("RemoteFunction")
+                if remote then
+                    remote:FireServer()
+                else
+                    tool:Activate()
+                end
+            end
+        end
+    end
+    
     local connection = RunService.Heartbeat:Connect(function()
         if not getgenv().RageBot.Enabled then return end
         
         local target = FindBestTarget()
         if target and target.Character then
-            local targetRoot = target.Character:FindFirstChild("HumanoidRootPart")
-            local localChar = LocalPlayer.Character
-            local localRoot = localChar and localChar:FindFirstChild("HumanoidRootPart")
+            local targetPart = target.Character:FindFirstChild(getgenv().TargetPart or "Head")
+            local camera = workspace.CurrentCamera
             
-            if targetRoot and localRoot then
-                -- Flick aim
-                local camera = workspace.CurrentCamera
-                local targetPos = targetRoot.Position
-                local direction = (targetPos - camera.CFrame.Position).Unit
-                
-                camera.CFrame = CFrame.lookAt(camera.CFrame.Position, targetPos)
+            if targetPart and camera then
+                -- Aim directly at head
+                camera.CFrame = CFrame.lookAt(camera.CFrame.Position, targetPart.Position)
                 
                 -- Auto shoot
-                if getgenv().AutoShoot then
-                    local tool = LocalPlayer.Character:FindFirstChildOfClass("Tool")
-                    if tool then
-                        tool:Activate()
-                    end
-                end
+                SimulateMouseClick()
             end
         end
     end)
@@ -312,24 +259,6 @@ function StartESP()
             tracer.Size = UDim2.new(0, 2, 0, 100)
             tracer.Parent = game:GetService("CoreGui")
         end
-        
-        -- Name ESP
-        if getgenv().NameESP then
-            local billboard = Instance.new("BillboardGui")
-            billboard.Name = "ESPName"
-            billboard.Adornee = character:FindFirstChild("Head")
-            billboard.Size = UDim2.new(0, 100, 0, 50)
-            billboard.StudsOffset = Vector3.new(0, 3, 0)
-            
-            local label = Instance.new("TextLabel")
-            label.Text = player.Name
-            label.TextColor3 = Color3.fromRGB(255, 255, 255)
-            label.BackgroundTransparency = 1
-            label.Size = UDim2.new(1, 0, 1, 0)
-            label.Parent = billboard
-            
-            billboard.Parent = character
-        end
     end
     
     for _, player in pairs(Players:GetPlayers()) do
@@ -345,7 +274,7 @@ function StopESP()
     for _, player in pairs(Players:GetPlayers()) do
         if player.Character then
             for _, obj in pairs(player.Character:GetDescendants()) do
-                if obj.Name == "ESPBox" or obj.Name == "ESPName" then
+                if obj.Name == "ESPBox" then
                     obj:Destroy()
                 end
             end
@@ -362,11 +291,6 @@ end
 
 -- WALL HACK FUNCTIONS
 function EnableWallHack()
-    if getgenv().ThroughWalls then
-        local camera = workspace.CurrentCamera
-        camera:ClearAllChildren()
-    end
-    
     if getgenv().ChamsEnabled then
         local Players = game:GetService("Players")
         local LocalPlayer = Players.LocalPlayer
@@ -410,82 +334,18 @@ function DisableChams()
     DisableWallHack()
 end
 
--- BYPASS FUNCTIONS
-function EnableAntiCheatBypass()
-    local mt = getrawmetatable(game)
-    setreadonly(mt, false)
-    
-    local oldIndex = mt.__index
-    mt.__index = newcclosure(function(self, key)
-        local keyStr = tostring(key):lower()
-        
-        if keyStr:find("cheat") or keyStr:find("hack") or keyStr:find("aimbot") or keyStr:find("esp") then
-            return nil
-        end
-        
-        return oldIndex(self, key)
-    end)
-    
-    setreadonly(mt, true)
-end
-
-function EnableAntiAim()
-    local RunService = game:GetService("RunService")
-    local Players = game:GetService("Players")
-    local LocalPlayer = Players.LocalPlayer
-    
-    local connection = RunService.Heartbeat:Connect(function()
-        if not getgenv().AntiAim then return end
-        
-        local character = LocalPlayer.Character
-        if not character then return end
-        
-        local rootPart = character:FindFirstChild("HumanoidRootPart")
-        if not rootPart then return end
-        
-        -- Randomize rotation to avoid aim detection
-        rootPart.CFrame = rootPart.CFrame * CFrame.Angles(
-            math.random(-10, 10) * math.pi/180,
-            math.random(-10, 10) * math.pi/180,
-            math.random(-10, 10) * math.pi/180
-        )
-    end)
-    
-    table.insert(getgenv().RageBot.Connections, connection)
-end
-
-function EnableNoRecoil()
-    local Players = game:GetService("Players")
-    local LocalPlayer = Players.LocalPlayer
-    
-    LocalPlayer.CharacterAdded:Connect(function(character)
-        local humanoid = character:WaitForChild("Humanoid")
-        
-        humanoid:GetPropertyChangedSignal("CameraOffset"):Connect(function()
-            if getgenv().NoRecoil then
-                humanoid.CameraOffset = Vector3.new(0, 0, 0)
-            end
-        end)
-    end)
-end
-
 -- INITIALIZE
 getgenv().FlickSpeed = 1
 getgenv().AutoShoot = false
-getgenv().InstantKill = false
+getgenv().TargetPart = "Head"
 getgenv().ESPEnabled = false
 getgenv().BoxESP = false
 getgenv().TracerESP = false
-getgenv().NameESP = false
 getgenv().WallHackEnabled = false
-getgenv().ThroughWalls = false
 getgenv().ChamsEnabled = false
-getgenv().AntiCheatBypass = false
-getgenv().AntiAim = false
-getgenv().NoRecoil = false
 
 Rayfield:Notify({
     Title = "Flick Rage Bot Loaded",
-    Content = "Enable features carefully!",
+    Content = "Rage bot will target head by default",
     Duration = 5,
 })
