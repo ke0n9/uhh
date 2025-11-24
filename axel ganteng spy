@@ -1,655 +1,497 @@
---[[
-    Advanced Remote Spy
-    by axel ganteng
-    Using Official WindUI
---]]
+local G2L = {};
 
-local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
+_G.Code = ""
+_G.RemoteLogs = {}
+_G.SystemRemotes = {}
+_G.ActiveHooks = {}
 
--- Create Window
-local Window = WindUI:CreateWindow({
-    Title = "Remote Spy | by axel ganteng",
-    Author = "by axel ganteng",
-    Folder = "RemoteSpyConfig",
-})
+-- StarterGui.Remote Spy
+G2L["1"] = Instance.new("ScreenGui", game.CoreGui);
+G2L["1"]["Name"] = [[Remote Spy]];
+G2L["1"]["ResetOnSpawn"] = false
+G2L["1"]["ZIndexBehavior"] = Enum.ZIndexBehavior.Sibling;
 
--- ========== GLOBAL VARIABLES ==========
-getgenv().RemoteSpy = {
-    Enabled = false,
-    MonitorRemotes = true,
-    AutoBlock = false,
-    LogCalls = true,
-    MaxLogs = 200
-}
+-- StarterGui.Remote Spy.Frame
+G2L["2"] = Instance.new("Frame", G2L["1"]);
+G2L["2"]["BorderSizePixel"] = 0;
+G2L["2"]["BackgroundColor3"] = Color3.fromRGB(30, 30, 30);
+G2L["2"]["Size"] = UDim2.new(0, 600, 0, 400);
+G2L["2"]["Position"] = UDim2.new(0.1, 0, 0.1, 0);
+G2L["2"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
 
--- Data Storage
-local RemoteData = {
-    Logs = {},
-    HookedRemotes = {},
-    OriginalFunctions = {},
-    FoundRemotes = {},
-    SelectedRemote = nil
-}
+-- StarterGui.Remote Spy.Frame.TopBar
+G2L["3"] = Instance.new("Frame", G2L["2"]);
+G2L["3"]["BorderSizePixel"] = 0;
+G2L["3"]["BackgroundColor3"] = Color3.fromRGB(25, 25, 25);
+G2L["3"]["Size"] = UDim2.new(0, 600, 0, 25);
+G2L["3"]["Position"] = UDim2.new(0, 0, 0, 0);
+G2L["3"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
+G2L["3"]["Name"] = [[TopBar]];
 
--- ========== CREATE TABS ==========
-local Tabs = {
-    Main = Window:Tab({Title = "Main", Icon = "home", Desc = "Main controls"}),
-    Scanner = Window:Tab({Title = "Scanner", Icon = "search", Desc = "Remote scanning"}),
-    RemoteManager = Window:Tab({Title = "Remotes", Icon = "list", Desc = "Remote management"}),
-    Security = Window:Tab({Title = "Security", Icon = "shield", Desc = "Security settings"})
-}
+-- StarterGui.Remote Spy.Frame.TopBar.Name
+G2L["4"] = Instance.new("TextLabel", G2L["3"]);
+G2L["4"]["BorderSizePixel"] = 0;
+G2L["4"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
+G2L["4"]["TextSize"] = 14;
+G2L["4"]["FontFace"] = Font.new([[rbxasset://fonts/families/Arial.json]], Enum.FontWeight.Bold, Enum.FontStyle.Normal);
+G2L["4"]["TextColor3"] = Color3.fromRGB(255, 255, 255);
+G2L["4"]["BackgroundTransparency"] = 1;
+G2L["4"]["Size"] = UDim2.new(0, 100, 0, 25);
+G2L["4"]["BorderColor3"] = Color3.fromRGB(255, 255, 255);
+G2L["4"]["Text"] = [[Advanced Remote Spy]];
+G2L["4"]["Name"] = [[Name]];
+G2L["4"]["Position"] = UDim2.new(0.02, 0, 0, 0);
 
--- Select first tab
-Window:SelectTab(1)
+-- StarterGui.Remote Spy.Frame.Tabs
+G2L["14"] = Instance.new("Frame", G2L["2"]);
+G2L["14"]["BorderSizePixel"] = 0;
+G2L["14"]["BackgroundColor3"] = Color3.fromRGB(40, 40, 40);
+G2L["14"]["Size"] = UDim2.new(0, 600, 0, 30);
+G2L["14"]["Position"] = UDim2.new(0, 0, 0.0625, 0);
+G2L["14"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
+G2L["14"]["Name"] = [[Tabs]];
 
--- ========== MAIN TAB ==========
-Tabs.Main:Section({Title = "System Status"})
+-- StarterGui.Remote Spy.Frame.Tabs.InteractiveTab
+G2L["15"] = Instance.new("TextButton", G2L["14"]);
+G2L["15"]["TextSize"] = 12;
+G2L["15"]["TextColor3"] = Color3.fromRGB(255, 255, 255);
+G2L["15"]["BackgroundColor3"] = Color3.fromRGB(60, 60, 60);
+G2L["15"]["FontFace"] = Font.new([[rbxasset://fonts/families/SourceSansPro.json]], Enum.FontWeight.Bold, Enum.FontStyle.Normal);
+G2L["15"]["Size"] = UDim2.new(0, 120, 0, 25);
+G2L["15"]["Name"] = [[InteractiveTab]];
+G2L["15"]["BorderColor3"] = Color3.fromRGB(100, 100, 100);
+G2L["15"]["Text"] = [[Interactive Remotes]];
+G2L["15"]["Position"] = UDim2.new(0, 0, 0, 0);
 
-local StatusLabel = Tabs.Main:Label("🔴 System: OFFLINE")
+-- StarterGui.Remote Spy.Frame.Tabs.SystemTab
+G2L["16"] = Instance.new("TextButton", G2L["14"]);
+G2L["16"]["TextSize"] = 12;
+G2L["16"]["TextColor3"] = Color3.fromRGB(255, 255, 255);
+G2L["16"]["BackgroundColor3"] = Color3.fromRGB(40, 40, 40);
+G2L["16"]["FontFace"] = Font.new([[rbxasset://fonts/families/SourceSansPro.json]], Enum.FontWeight.Bold, Enum.FontStyle.Normal);
+G2L["16"]["Size"] = UDim2.new(0, 120, 0, 25);
+G2L["16"]["Name"] = [[SystemTab]];
+G2L["16"]["BorderColor3"] = Color3.fromRGB(100, 100, 100);
+G2L["16"]["Text"] = [[System Remotes]];
+G2L["16"]["Position"] = UDim2.new(0.2, 0, 0, 0);
 
-Tabs.Main:Section({Title = "Remote Spy Controls"})
+-- StarterGui.Remote Spy.Frame.Tabs.AllRemotesTab
+G2L["17"] = Instance.new("TextButton", G2L["14"]);
+G2L["17"]["TextSize"] = 12;
+G2L["17"]["TextColor3"] = Color3.fromRGB(255, 255, 255);
+G2L["17"]["BackgroundColor3"] = Color3.fromRGB(40, 40, 40);
+G2L["17"]["FontFace"] = Font.new([[rbxasset://fonts/families/SourceSansPro.json]], Enum.FontWeight.Bold, Enum.FontStyle.Normal);
+G2L["17"]["Size"] = UDim2.new(0, 120, 0, 25);
+G2L["17"]["Name"] = [[AllRemotesTab]];
+G2L["17"]["BorderColor3"] = Color3.fromRGB(100, 100, 100);
+G2L["17"]["Text"] = [[All Remotes]];
+G2L["17"]["Position"] = UDim2.new(0.4, 0, 0, 0);
 
-local SpyToggle = Tabs.Main:Toggle({
-    Title = "Enable Remote Spy",
-    Default = false,
-    Callback = function(Value)
-        getgenv().RemoteSpy.Enabled = Value
-        updateStatus()
-        if Value then
-            startRemoteSpy()
-        else
-            stopRemoteSpy()
-        end
-    end
-})
+-- Interactive Remotes Frame
+G2L["18"] = Instance.new("ScrollingFrame", G2L["2"]);
+G2L["18"]["Active"] = true;
+G2L["18"]["BorderSizePixel"] = 0;
+G2L["18"]["CanvasSize"] = UDim2.new(0, 0, 100, 0);
+G2L["18"]["BackgroundColor3"] = Color3.fromRGB(35, 35, 35);
+G2L["18"]["Name"] = [[InteractiveRemotes]];
+G2L["18"]["ScrollBarImageColor3"] = Color3.fromRGB(100, 100, 100);
+G2L["18"]["Size"] = UDim2.new(0, 250, 0, 300);
+G2L["18"]["Position"] = UDim2.new(0, 0, 0.1875, 0);
+G2L["18"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
+G2L["18"]["ScrollBarThickness"] = 6;
 
-local MonitorToggle = Tabs.Main:Toggle({
-    Title = "Monitor Remote Calls",
-    Default = true,
-    Callback = function(Value)
-        getgenv().RemoteSpy.MonitorRemotes = Value
-    end
-})
+-- System Remotes Frame (Hidden by default)
+G2L["19"] = Instance.new("ScrollingFrame", G2L["2"]);
+G2L["19"]["Active"] = true;
+G2L["19"]["BorderSizePixel"] = 0;
+G2L["19"]["CanvasSize"] = UDim2.new(0, 0, 100, 0);
+G2L["19"]["BackgroundColor3"] = Color3.fromRGB(35, 35, 35);
+G2L["19"]["Name"] = [[SystemRemotes]];
+G2L["19"]["ScrollBarImageColor3"] = Color3.fromRGB(100, 100, 100);
+G2L["19"]["Size"] = UDim2.new(0, 250, 0, 300);
+G2L["19"]["Position"] = UDim2.new(0, 0, 0.1875, 0);
+G2L["19"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
+G2L["19"]["ScrollBarThickness"] = 6;
+G2L["19"]["Visible"] = false;
 
-local BlockToggle = Tabs.Main:Toggle({
-    Title = "Auto Block Suspicious",
-    Default = false,
-    Callback = function(Value)
-        getgenv().RemoteSpy.AutoBlock = Value
-    end
-})
+-- All Remotes Frame (Hidden by default)
+G2L["20"] = Instance.new("ScrollingFrame", G2L["2"]);
+G2L["20"]["Active"] = true;
+G2L["20"]["BorderSizePixel"] = 0;
+G2L["20"]["CanvasSize"] = UDim2.new(0, 0, 100, 0);
+G2L["20"]["BackgroundColor3"] = Color3.fromRGB(35, 35, 35);
+G2L["20"]["Name"] = [[AllRemotes]];
+G2L["20"]["ScrollBarImageColor3"] = Color3.fromRGB(100, 100, 100);
+G2L["20"]["Size"] = UDim2.new(0, 250, 0, 300);
+G2L["20"]["Position"] = UDim2.new(0, 0, 0.1875, 0);
+G2L["20"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
+G2L["20"]["ScrollBarThickness"] = 6;
+G2L["20"]["Visible"] = false;
 
-Tabs.Main:Section({Title = "Quick Actions"})
+-- Code Output Frame
+G2L["21"] = Instance.new("Frame", G2L["2"]);
+G2L["21"]["BorderSizePixel"] = 0;
+G2L["21"]["BackgroundColor3"] = Color3.fromRGB(25, 25, 25);
+G2L["21"]["Size"] = UDim2.new(0, 330, 0, 300);
+G2L["21"]["Position"] = UDim2.new(0.416, 0, 0.1875, 0);
+G2L["21"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
+G2L["21"]["Name"] = [[CodeOutput]];
 
-local ScanBtn = Tabs.Main:Button({
-    Title = "Quick Scan",
-    Callback = function()
-        quickScan()
-    end
-})
+-- Code Output TextBox
+G2L["22"] = Instance.new("TextBox", G2L["21"]);
+G2L["22"]["CursorPosition"] = -1;
+G2L["22"]["TextColor3"] = Color3.fromRGB(220, 220, 220);
+G2L["22"]["BorderSizePixel"] = 0;
+G2L["22"]["TextXAlignment"] = Enum.TextXAlignment.Left;
+G2L["22"]["TextWrapped"] = true;
+G2L["22"]["TextSize"] = 12;
+G2L["22"]["Name"] = [[OutputBox]];
+G2L["22"]["TextYAlignment"] = Enum.TextYAlignment.Top;
+G2L["22"]["BackgroundColor3"] = Color3.fromRGB(30, 30, 30);
+G2L["22"]["FontFace"] = Font.new([[rbxasset://fonts/families/RobotoMono.json]], Enum.FontWeight.Regular, Enum.FontStyle.Normal);
+G2L["22"]["MultiLine"] = true;
+G2L["22"]["ClearTextOnFocus"] = false;
+G2L["22"]["Size"] = UDim2.new(0, 330, 0, 300);
+G2L["22"]["Position"] = UDim2.new(0, 0, 0, 0);
+G2L["22"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
+G2L["22"]["Text"] = [[Select a remote to view code...]];
 
-local ClearBtn = Tabs.Main:Button({
-    Title = "Clear Logs",
-    Callback = function()
-        clearLogs()
-    end
-})
+-- Control Buttons
+G2L["23"] = Instance.new("Frame", G2L["2"]);
+G2L["23"]["BorderSizePixel"] = 0;
+G2L["23"]["BackgroundColor3"] = Color3.fromRGB(40, 40, 40);
+G2L["23"]["Size"] = UDim2.new(0, 330, 0, 40);
+G2L["23"]["Position"] = UDim2.new(0.416, 0, 0.925, 0);
+G2L["23"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
+G2L["23"]["Name"] = [[Controls]];
 
--- ========== SCANNER TAB ==========
-Tabs.Scanner:Section({Title = "Scanning Tools"})
+-- Copy Code Button
+G2L["24"] = Instance.new("TextButton", G2L["23"]);
+G2L["24"]["TextSize"] = 12;
+G2L["24"]["TextColor3"] = Color3.fromRGB(255, 255, 255);
+G2L["24"]["BackgroundColor3"] = Color3.fromRGB(60, 60, 60);
+G2L["24"]["FontFace"] = Font.new([[rbxasset://fonts/families/SourceSansPro.json]], Enum.FontWeight.Bold, Enum.FontStyle.Normal);
+G2L["24"]["Size"] = UDim2.new(0, 80, 0, 25);
+G2L["24"]["Name"] = [[CopyCode]];
+G2L["24"]["BorderColor3"] = Color3.fromRGB(100, 100, 100);
+G2L["24"]["Text"] = [[Copy Code]];
+G2L["24"]["Position"] = UDim2.new(0.03, 0, 0.125, 0);
 
-local DeepScanBtn = Tabs.Scanner:Button({
-    Title = "Deep Scan",
-    Callback = function()
-        performDeepScan()
-    end
-})
+-- Execute Button
+G2L["25"] = Instance.new("TextButton", G2L["23"]);
+G2L["25"]["TextSize"] = 12;
+G2L["25"]["TextColor3"] = Color3.fromRGB(255, 255, 255);
+G2L["25"]["BackgroundColor3"] = Color3.fromRGB(60, 60, 60);
+G2L["25"]["FontFace"] = Font.new([[rbxasset://fonts/families/SourceSansPro.json]], Enum.FontWeight.Bold, Enum.FontStyle.Normal);
+G2L["25"]["Size"] = UDim2.new(0, 80, 0, 25);
+G2L["25"]["Name"] = [[Execute]];
+G2L["25"]["BorderColor3"] = Color3.fromRGB(100, 100, 100);
+G2L["25"]["Text"] = [[Execute]];
+G2L["25"]["Position"] = UDim2.new(0.3, 0, 0.125, 0);
 
-local ScriptScanBtn = Tabs.Scanner:Button({
-    Title = "Scan Scripts",
-    Callback = function()
-        scanScriptsForRemotes()
-    end
-})
+-- Clear Button
+G2L["26"] = Instance.new("TextButton", G2L["23"]);
+G2L["26"]["TextSize"] = 12;
+G2L["26"]["TextColor3"] = Color3.fromRGB(255, 255, 255);
+G2L["26"]["BackgroundColor3"] = Color3.fromRGB(60, 60, 60);
+G2L["26"]["FontFace"] = Font.new([[rbxasset://fonts/families/SourceSansPro.json]], Enum.FontWeight.Bold, Enum.FontStyle.Normal);
+G2L["26"]["Size"] = UDim2.new(0, 80, 0, 25);
+G2L["26"]["Name"] = [[Clear]];
+G2L["26"]["BorderColor3"] = Color3.fromRGB(100, 100, 100);
+G2L["26"]["Text"] = [[Clear All]];
+G2L["26"]["Position"] = UDim2.new(0.57, 0, 0.125, 0);
 
-local RefreshBtn = Tabs.Scanner:Button({
-    Title = "Refresh List",
-    Callback = function()
-        updateRemoteList()
-    end
-})
+-- Remote Counter
+G2L["27"] = Instance.new("TextLabel", G2L["23"]);
+G2L["27"]["BorderSizePixel"] = 0;
+G2L["27"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
+G2L["27"]["TextSize"] = 11;
+G2L["27"]["FontFace"] = Font.new([[rbxasset://fonts/families/SourceSansPro.json]], Enum.FontWeight.Regular, Enum.FontStyle.Normal);
+G2L["27"]["TextColor3"] = Color3.fromRGB(200, 200, 200);
+G2L["27"]["BackgroundTransparency"] = 1;
+G2L["27"]["Size"] = UDim2.new(0, 100, 0, 25);
+G2L["27"]["BorderColor3"] = Color3.fromRGB(255, 255, 255);
+G2L["27"]["Text"] = [[Interactive: 0]];
+G2L["27"]["Name"] = [[Counter]];
+G2L["27"]["Position"] = UDim2.new(0.75, 0, 0.125, 0);
 
-Tabs.Scanner:Section({Title = "Scan Results"})
+-- Remote Template
+G2L["28"] = Instance.new("TextButton", G2L["18"]);
+G2L["28"]["BorderSizePixel"] = 1;
+G2L["28"]["TextSize"] = 11;
+G2L["28"]["TextColor3"] = Color3.fromRGB(255, 255, 255);
+G2L["28"]["BackgroundColor3"] = Color3.fromRGB(50, 50, 50);
+G2L["28"]["FontFace"] = Font.new([[rbxasset://fonts/families/SourceSansPro.json]], Enum.FontWeight.Regular, Enum.FontStyle.Normal);
+G2L["28"]["Size"] = UDim2.new(0, 240, 0, 20);
+G2L["28"]["Name"] = [[RemoteTemplate]];
+G2L["28"]["BorderColor3"] = Color3.fromRGB(80, 80, 80);
+G2L["28"]["Text"] = [[RemoteName]];
+G2L["28"]["Visible"] = false;
 
-local ResultsLabel = Tabs.Scanner:Label("Click 'Deep Scan' to find remotes")
+-- System Remote Template
+G2L["29"] = Instance.new("TextButton", G2L["19"]);
+G2L["29"]["BorderSizePixel"] = 1;
+G2L["29"]["TextSize"] = 11;
+G2L["29"]["TextColor3"] = Color3.fromRGB(200, 200, 200);
+G2L["29"]["BackgroundColor3"] = Color3.fromRGB(60, 60, 60);
+G2L["29"]["FontFace"] = Font.new([[rbxasset://fonts/families/SourceSansPro.json]], Enum.FontWeight.Regular, Enum.FontStyle.Normal);
+G2L["29"]["Size"] = UDim2.new(0, 240, 0, 20);
+G2L["29"]["Name"] = [[SystemTemplate]];
+G2L["29"]["BorderColor3"] = Color3.fromRGB(80, 80, 80);
+G2L["29"]["Text"] = [[SystemRemote]];
+G2L["29"]["Visible"] = false;
 
--- ========== REMOTE MANAGER TAB ==========
-Tabs.RemoteManager:Section({Title = "Remote Selection"})
-
-local RemoteDropdown = Tabs.RemoteManager:Dropdown({
-    Title = "Select Remote",
-    Values = {"No remotes found"},
-    Value = "No remotes found",
-    Callback = function(Option)
-        selectRemoteFromDropdown(Option)
-    end
-})
-
-Tabs.RemoteManager:Section({Title = "Remote Information"})
-
-local RemoteInfoLabel = Tabs.RemoteManager:Label("Select a remote to view info")
-
-Tabs.RemoteManager:Section({Title = "Copy Tools"})
-
-local CopyPathBtn = Tabs.RemoteManager:Button({
-    Title = "Copy Remote Path",
-    Callback = function()
-        copySelectedRemotePath()
-    end
-})
-
-local CopyNameBtn = Tabs.RemoteManager:Button({
-    Title = "Copy Remote Name",
-    Callback = function()
-        copySelectedRemoteName()
-    end
-})
-
-local CopyScriptBtn = Tabs.RemoteManager:Button({
-    Title = "Copy Fire Script",
-    Callback = function()
-        copySelectedFireScript()
-    end
-})
-
--- ========== SECURITY TAB ==========
-Tabs.Security:Section({Title = "Security Settings"})
-
-local AlertToggle = Tabs.Security:Toggle({
-    Title = "Alert on Suspicious",
-    Default = true,
-    Callback = function(Value)
-        -- Alert setting
-    end
-})
-
-Tabs.Security:Section({Title = "Security Actions"})
-
-local BlockAllBtn = Tabs.Security:Button({
-    Title = "Block All Remotes",
-    Callback = function()
-        blockAllRemotes()
-    end
-})
-
-local UnblockAllBtn = Tabs.Security:Button({
-    Title = "Unblock All Remotes",
-    Callback = function()
-        unblockAllRemotes()
-    end
-})
-
-local ExportBtn = Tabs.Security:Button({
-    Title = "Export Security Report",
-    Callback = function()
-        exportSecurityReport()
-    end
-})
-
--- ========== CORE FUNCTIONS ==========
-
-function startRemoteSpy()
-    WindUI:Notify({
-        Title = "Remote Spy",
-        Content = "Starting remote monitoring system...",
-        Icon = "loader",
-        Duration = 3
-    })
-    
-    findAndHookAllRemotes()
-    
-    -- Monitor for new remotes
-    game.DescendantAdded:Connect(function(obj)
-        if isValidRemote(obj) then
-            hookRemote(obj)
-            addToFoundRemotes(obj)
-            updateRemoteList()
-        end
-    end)
-    
-    updateStatus()
-    
-    WindUI:Notify({
-        Title = "Remote Spy",
-        Content = "System started successfully!",
-        Icon = "check",
-        Duration = 3
-    })
+-- Function to detect system vs interactive remotes
+local function isSystemRemote(remote)
+    local path = getPathToInstance(remote)
+    return string.find(path:lower(), "system") or 
+           string.find(path:lower(), "core") or
+           string.find(path:lower(), "internal") or
+           string.find(remote.Name:lower(), "system") or
+           string.find(remote.Name:lower(), "core") or
+           string.find(remote.Name:lower(), "internal")
 end
 
-function stopRemoteSpy()
-    for remote, original in pairs(RemoteData.OriginalFunctions) do
-        restoreOriginalFunction(remote)
-    end
+-- Enhanced hooking system
+local function hookRemote(remote)
+    if _G.ActiveHooks[remote] then return end
     
-    RemoteData.HookedRemotes = {}
-    updateStatus()
-    
-    WindUI:Notify({
-        Title = "Remote Spy",
-        Content = "System stopped!",
-        Icon = "power",
-        Duration = 3
-    })
-end
-
-function findAndHookAllRemotes()
-    local services = {
-        game:GetService("ReplicatedStorage"),
-        game:GetService("ServerStorage"),
-        game:GetService("ServerScriptService"),
-        game:GetService("Players"),
-        game:GetService("Workspace")
-    }
-    
-    for _, service in pairs(services) do
-        if service then
-            for _, obj in pairs(service:GetDescendants()) do
-                if isValidRemote(obj) then
-                    hookRemote(obj)
-                    addToFoundRemotes(obj)
-                end
-            end
-        end
-    end
-    
-    updateRemoteList()
-end
-
-function isValidRemote(obj)
-    return obj:IsA("RemoteEvent") or obj:IsA("RemoteFunction") or obj:IsA("BindableEvent")
-end
-
-function hookRemote(remote)
-    if RemoteData.HookedRemotes[remote] then return end
+    local isSystem = isSystemRemote(remote)
+    _G.ActiveHooks[remote] = true
     
     if remote:IsA("RemoteEvent") then
-        hookRemoteEvent(remote)
+        local oldFireServer = remote.FireServer
+        remote.FireServer = function(self, ...)
+            local args = {...}
+            logRemoteCall(remote, args, "FireServer", isSystem)
+            return oldFireServer(self, ...)
+        end
+        
+        remote.OnClientEvent:Connect(function(...)
+            local args = {...}
+            logRemoteCall(remote, args, "OnClientEvent", isSystem)
+        end)
+        
     elseif remote:IsA("RemoteFunction") then
-        hookRemoteFunction(remote)
-    elseif remote:IsA("BindableEvent") then
-        hookBindableEvent(remote)
-    end
-    
-    RemoteData.HookedRemotes[remote] = true
-end
-
-function hookRemoteEvent(remote)
-    local original = remote.FireServer
-    RemoteData.OriginalFunctions[remote] = original
-    
-    remote.FireServer = function(self, ...)
-        local args = {...}
-        logRemoteCall(remote, "RemoteEvent", args)
+        local oldInvokeServer = remote.InvokeServer
+        remote.InvokeServer = function(self, ...)
+            local args = {...}
+            logRemoteCall(remote, args, "InvokeServer", isSystem)
+            return oldInvokeServer(self, ...)
+        end
         
-        if not shouldBlockRemote(remote, args) then
-            return original(self, ...)
-        else
-            return nil
-        end
-    end
-end
-
-function hookRemoteFunction(remote)
-    local original = remote.InvokeServer
-    RemoteData.OriginalFunctions[remote] = original
-    
-    remote.InvokeServer = function(self, ...)
-        local args = {...}
-        logRemoteCall(remote, "RemoteFunction", args)
-        
-        if not shouldBlockRemote(remote, args) then
-            return original(self, ...)
-        else
-            return nil
-        end
-    end
-end
-
-function hookBindableEvent(bindable)
-    local original = bindable.Fire
-    RemoteData.OriginalFunctions[bindable] = original
-    
-    bindable.Fire = function(self, ...)
-        local args = {...}
-        logRemoteCall(bindable, "BindableEvent", args)
-        return original(self, ...)
-    end
-end
-
-function shouldBlockRemote(remote, args)
-    if not getgenv().RemoteSpy.AutoBlock then return false end
-    
-    local remoteName = remote.Name:lower()
-    local suspiciousPatterns = {"kick", "ban", "punish", "reset", "crash", "exploit"}
-    
-    for _, pattern in ipairs(suspiciousPatterns) do
-        if remoteName:find(pattern) then
-            WindUI:Notify({
-                Title = "🚨 Blocked Suspicious Remote",
-                Content = "Blocked: " .. remote.Name,
-                Icon = "shield-alert",
-                Duration = 5
-            })
-            return true
-        end
-    end
-    
-    return false
-end
-
-function logRemoteCall(remote, callType, args)
-    if not getgenv().RemoteSpy.LogCalls then return end
-    
-    local logEntry = {
-        Timestamp = os.date("%X"),
-        RemoteName = remote.Name,
-        RemoteType = callType,
-        Arguments = args,
-        RemotePath = remote:GetFullName()
-    }
-    
-    table.insert(RemoteData.Logs, 1, logEntry)
-    
-    -- Limit logs
-    if #RemoteData.Logs > getgenv().RemoteSpy.MaxLogs then
-        table.remove(RemoteData.Logs)
-    end
-    
-    -- Print to console
-    print(string.format("[%s] %s - %s", logEntry.Timestamp, logEntry.RemoteName, logEntry.RemoteType))
-end
-
--- ========== SCANNING FUNCTIONS ==========
-
-function performDeepScan()
-    RemoteData.FoundRemotes = {}
-    
-    -- Scan all game services
-    for _, service in pairs(game:GetChildren()) do
-        scanServiceForRemotes(service)
-    end
-    
-    updateRemoteList()
-    
-    WindUI:Notify({
-        Title = "Deep Scan Complete",
-        Content = "Found " .. #RemoteData.FoundRemotes .. " remotes",
-        Icon = "search",
-        Duration = 4
-    })
-    
-    ResultsLabel:Set("Deep scan completed!\nFound " .. #RemoteData.FoundRemotes .. " remotes")
-end
-
-function scanServiceForRemotes(service)
-    local success, result = pcall(function()
-        for _, obj in pairs(service:GetDescendants()) do
-            if isValidRemote(obj) then
-                addToFoundRemotes(obj)
+        local oldOnClientInvoke = remote.OnClientInvoke
+        remote.OnClientInvoke = function(...)
+            local args = {...}
+            logRemoteCall(remote, args, "OnClientInvoke", isSystem)
+            if oldOnClientInvoke then
+                return oldOnClientInvoke(...)
             end
         end
-    end)
+    end
 end
 
-function scanScriptsForRemotes()
-    WindUI:Notify({
-        Title = "Script Scanner",
-        Content = "Scanning scripts for remote usage...",
-        Icon = "file-text",
-        Duration = 3
-    })
-end
-
-function addToFoundRemotes(remote)
+-- Enhanced logging function
+local function logRemoteCall(remote, args, callType, isSystem)
+    local timestamp = os.date("%H:%M:%S")
     local remoteInfo = {
-        Object = remote,
-        Name = remote.Name,
-        Type = remote.ClassName,
-        Path = remote:GetFullName(),
-        IsHooked = RemoteData.HookedRemotes[remote] or false
+        Remote = remote,
+        Args = args,
+        CallType = callType,
+        Timestamp = timestamp,
+        IsSystem = isSystem
     }
     
-    table.insert(RemoteData.FoundRemotes, remoteInfo)
+    table.insert(_G.RemoteLogs, remoteInfo)
+    
+    if isSystem then
+        _G.SystemRemotes[remote] = remoteInfo
+        addSystemRemoteToList(remote, callType, timestamp)
+    else
+        addInteractiveRemoteToList(remote, callType, timestamp)
+    end
+    
+    updateCounter()
 end
 
--- ========== COPY FUNCTIONS ==========
-
-function selectRemoteFromDropdown(option)
-    if option == "No remotes found" then return end
+-- Function to add interactive remote to list
+local function addInteractiveRemoteToList(remote, callType, timestamp)
+    local template = G2L["28"]:Clone()
+    template.Text = string.format("%s (%s) - %s", remote.Name, callType, timestamp)
+    template.Visible = true
+    template.Parent = G2L["18"]
     
-    for _, remote in pairs(RemoteData.FoundRemotes) do
-        if remote.Name == option then
-            RemoteData.SelectedRemote = remote
-            updateRemoteInfoDisplay(remote)
-            WindUI:Notify({
-                Title = "Remote Selected",
-                Content = "Selected: " .. remote.Name,
-                Icon = "check",
-                Duration = 2
-            })
-            break
+    template.MouseButton1Click:Connect(function()
+        displayRemoteCode(remote, callType)
+    end)
+    
+    -- Auto-scroll
+    G2L["18"].CanvasSize = UDim2.new(0, 0, 0, #G2L["18"]:GetChildren() * 25)
+end
+
+-- Function to add system remote to list
+local function addSystemRemoteToList(remote, callType, timestamp)
+    local template = G2L["29"]:Clone()
+    template.Text = string.format("[SYS] %s (%s) - %s", remote.Name, callType, timestamp)
+    template.Visible = true
+    template.Parent = G2L["19"]
+    
+    template.MouseButton1Click:Connect(function()
+        displayRemoteCode(remote, callType)
+    end)
+    
+    G2L["19"].CanvasSize = UDim2.new(0, 0, 0, #G2L["19"]:GetChildren() * 25)
+end
+
+-- Function to display remote code
+local function displayRemoteCode(remote, callType)
+    local path = getPathToInstance(remote)
+    local argsString = ""
+    
+    if _G.RemoteLogs[#_G.RemoteLogs] then
+        local lastCall = _G.RemoteLogs[#_G.RemoteLogs]
+        if lastCall.Remote == remote then
+            local formattedArgs = Format(lastCall.Args)
+            argsString = table.concat(formattedArgs, ",\n    ")
         end
     end
-end
-
-function copySelectedRemotePath()
-    if not RemoteData.SelectedRemote then
-        showNoRemoteSelectedError()
-        return
+    
+    local codeTemplate = ""
+    if callType == "FireServer" then
+        codeTemplate = string.format("-- %s FireServer Call\nlocal args = {\n    %s\n}\n%s:FireServer(unpack(args))", 
+            remote.Name, argsString, path)
+    elseif callType == "InvokeServer" then
+        codeTemplate = string.format("-- %s InvokeServer Call\nlocal args = {\n    %s\n}\nlocal result = %s:InvokeServer(unpack(args))", 
+            remote.Name, argsString, path)
+    elseif callType == "OnClientEvent" then
+        codeTemplate = string.format("-- %s OnClientEvent Handler\n%s.OnClientEvent:Connect(function(%s)\n    -- Handle event\nend)", 
+            remote.Name, path, argsString ~= "" and "..." or "")
     end
     
-    setclipboard(RemoteData.SelectedRemote.Path)
-    WindUI:Notify({
-        Title = "Copied to Clipboard",
-        Content = "Remote path copied!",
-        Icon = "copy",
-        Duration = 2
-    })
+    G2L["22"].Text = codeTemplate
+    _G.Code = codeTemplate
 end
 
-function copySelectedRemoteName()
-    if not RemoteData.SelectedRemote then
-        showNoRemoteSelectedError()
-        return
-    end
-    
-    setclipboard(RemoteData.SelectedRemote.Name)
-    WindUI:Notify({
-        Title = "Copied to Clipboard",
-        Content = "Remote name copied!",
-        Icon = "copy",
-        Duration = 2
-    })
+-- Function to update counter
+local function updateCounter()
+    local interactiveCount = #G2L["18"]:GetChildren() - 1
+    local systemCount = #G2L["19"]:GetChildren() - 1
+    G2L["27"].Text = string.format("Int: %d | Sys: %d", interactiveCount, systemCount)
 end
 
-function copySelectedFireScript()
-    if not RemoteData.SelectedRemote then
-        showNoRemoteSelectedError()
-        return
-    end
-    
-    local remote = RemoteData.SelectedRemote
-    local script = ""
-    
-    if remote.Type == "RemoteEvent" then
-        script = string.format([[
--- Fire RemoteEvent: %s
-local remote = game:GetService("ReplicatedStorage"):WaitForChild("%s")
-if remote:IsA("RemoteEvent") then
-    remote:FireServer()
-    print("Fired RemoteEvent: %s")
-end
-        ]], remote.Name, remote.Name, remote.Name)
-        
-    elseif remote.Type == "RemoteFunction" then
-        script = string.format([[
--- Invoke RemoteFunction: %s
-local remote = game:GetService("ReplicatedStorage"):WaitForChild("%s")
-if remote:IsA("RemoteFunction") then
-    local result = remote:InvokeServer()
-    print("Invoked RemoteFunction: %s - Result:", result)
-end
-        ]], remote.Name, remote.Name, remote.Name)
-        
-    elseif remote.Type == "BindableEvent" then
-        script = string.format([[
--- Fire BindableEvent: %s
-local bindable = game:GetService("ReplicatedStorage"):WaitForChild("%s")
-if bindable:IsA("BindableEvent") then
-    bindable:Fire()
-    print("Fired BindableEvent: %s")
-end
-        ]], remote.Name, remote.Name, remote.Name)
-    end
-    
-    setclipboard(script)
-    WindUI:Notify({
-        Title = "Copied to Clipboard",
-        Content = "Fire script copied!",
-        Icon = "copy",
-        Duration = 2
-    })
-end
-
--- ========== UI UPDATE FUNCTIONS ==========
-
-function updateStatus()
-    local status = getgenv().RemoteSpy.Enabled and "🟢 ONLINE" or "🔴 OFFLINE"
-    local statusText = string.format("%s\nHooked Remotes: %d\nTotal Logs: %d", 
-        status, 
-        getTableLength(RemoteData.HookedRemotes), 
-        #RemoteData.Logs
-    )
-    StatusLabel:Set(statusText)
-end
-
-function updateRemoteList()
-    local options = {"Select a remote..."}
-    
-    for _, remote in pairs(RemoteData.FoundRemotes) do
-        table.insert(options, remote.Name)
-    end
-    
-    RemoteDropdown:Refresh(options)
-    ResultsLabel:Set("Found " .. #RemoteData.FoundRemotes .. " remotes")
-end
-
-function updateRemoteInfoDisplay(remote)
-    local infoText = string.format("Name: %s\nType: %s\nPath: %s\nHooked: %s",
-        remote.Name,
-        remote.Type,
-        remote.Path,
-        tostring(remote.IsHooked)
-    )
-    RemoteInfoLabel:Set(infoText)
-end
-
-function showNoRemoteSelectedError()
-    WindUI:Notify({
-        Title = "Error",
-        Content = "No remote selected!",
-        Icon = "x",
-        Duration = 2
-    })
-end
-
--- ========== UTILITY FUNCTIONS ==========
-
-function getTableLength(t)
-    local count = 0
-    for _ in pairs(t) do count = count + 1 end
-    return count
-end
-
-function quickScan()
-    RemoteData.FoundRemotes = {}
-    findAndHookAllRemotes()
-    WindUI:Notify({
-        Title = "Quick Scan Complete",
-        Content = "Found " .. #RemoteData.FoundRemotes .. " remotes",
-        Icon = "search",
-        Duration = 3
-    })
-end
-
-function clearLogs()
-    RemoteData.Logs = {}
-    updateStatus()
-    WindUI:Notify({
-        Title = "Logs Cleared",
-        Content = "All logs have been cleared!",
-        Icon = "trash",
-        Duration = 2
-    })
-end
-
-function blockAllRemotes()
-    for remote, _ in pairs(RemoteData.HookedRemotes) do
-        if remote:IsA("RemoteEvent") then
-            remote.FireServer = function() end
-        elseif remote:IsA("RemoteFunction") then
-            remote.InvokeServer = function() return nil end
-        end
-    end
-    WindUI:Notify({
-        Title = "All Remotes Blocked",
-        Content = "All remote calls are now blocked!",
-        Icon = "shield",
-        Duration = 3
-    })
-end
-
-function unblockAllRemotes()
-    for remote, original in pairs(RemoteData.OriginalFunctions) do
-        if remote:IsA("RemoteEvent") then
-            remote.FireServer = original
-        elseif remote:IsA("RemoteFunction") then
-            remote.InvokeServer = original
-        end
-    end
-    WindUI:Notify({
-        Title = "All Remotes Unblocked",
-        Content = "All remote calls are now unblocked!",
-        Icon = "shield-off",
-        Duration = 3
-    })
-end
-
-function exportSecurityReport()
-    WindUI:Notify({
-        Title = "Security Report",
-        Content = "Security report exported!",
-        Icon = "download",
-        Duration = 3
-    })
-end
-
-function restoreOriginalFunction(remote)
-    local original = RemoteData.OriginalFunctions[remote]
-    if original then
-        if remote:IsA("RemoteEvent") then
-            remote.FireServer = original
-        elseif remote:IsA("RemoteFunction") then
-            remote.InvokeServer = original
-        elseif remote:IsA("BindableEvent") then
-            remote.Fire = original
-        end
-    end
-end
-
--- Initialize with a quick scan
-spawn(function()
-    wait(2)
-    quickScan()
+-- Tab switching functionality
+G2L["15"].MouseButton1Click:Connect(function()
+    G2L["18"].Visible = true
+    G2L["19"].Visible = false
+    G2L["20"].Visible = false
+    G2L["15"].BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+    G2L["16"].BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    G2L["17"].BackgroundColor3 = Color3.fromRGB(40, 40, 40)
 end)
+
+G2L["16"].MouseButton1Click:Connect(function()
+    G2L["18"].Visible = false
+    G2L["19"].Visible = true
+    G2L["20"].Visible = false
+    G2L["15"].BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    G2L["16"].BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+    G2L["17"].BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+end)
+
+G2L["17"].MouseButton1Click:Connect(function()
+    G2L["18"].Visible = false
+    G2L["19"].Visible = false
+    G2L["20"].Visible = true
+    G2L["15"].BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    G2L["16"].BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    G2L["17"].BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+    showAllRemotes()
+end)
+
+-- Button functionalities
+G2L["24"].MouseButton1Click:Connect(function()
+    if setclipboard then
+        setclipboard(_G.Code)
+        G2L["24"].Text = "Copied!"
+        wait(1)
+        G2L["24"].Text = "Copy Code"
+    else
+        G2L["22"].Text = "Clipboard not supported by executor"
+    end
+end)
+
+G2L["25"].MouseButton1Click:Connect(function()
+    local success, err = pcall(function()
+        loadstring(_G.Code)()
+    end)
+    if not success then
+        G2L["22"].Text = "Execution Error: " .. err
+    end
+end)
+
+G2L["26"].MouseButton1Click:Connect(function()
+    for _, frame in pairs({G2L["18"], G2L["19"], G2L["20"]}) do
+        for _, child in pairs(frame:GetChildren()) do
+            if child:IsA("TextButton") and child.Visible then
+                child:Destroy()
+            end
+        end
+    end
+    G2L["22"].Text = "Select a remote to view code..."
+    updateCounter()
+end)
+
+-- Initialize remote hooking
+local function initializeHooking()
+    local folders = {
+        game:GetService("ReplicatedStorage"),
+        game:GetService("StarterGui"),
+        game:GetService("StarterPack"),
+        game:GetService("StarterPlayer"),
+        game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui"),
+        game:GetService("Players").LocalPlayer:WaitForChild("Backpack")
+    }
+    
+    for _, folder in pairs(folders) do
+        for _, remote in pairs(folder:GetDescendants()) do
+            if remote:IsA("RemoteEvent") or remote:IsA("RemoteFunction") then
+                hookRemote(remote)
+            end
+        end
+        
+        folder.DescendantAdded:Connect(function(descendant)
+            if descendant:IsA("RemoteEvent") or descendant:IsA("RemoteFunction") then
+                hookRemote(descendant)
+            end
+        end)
+    end
+end
+
+-- Function to show all remotes combined
+local function showAllRemotes()
+    for _, child in pairs(G2L["20"]:GetChildren()) do
+        if child:IsA("TextButton") then
+            child:Destroy()
+        end
+    end
+    
+    for _, log in pairs(_G.RemoteLogs) do
+        local template = G2L["28"]:Clone()
+        local prefix = log.IsSystem and "[SYS] " or "[INT] "
+        template.Text = prefix .. string.format("%s (%s) - %s", log.Remote.Name, log.CallType, log.Timestamp)
+        template.Visible = true
+        template.Parent = G2L["20"]
+        
+        template.MouseButton1Click:Connect(function()
+            displayRemoteCode(log.Remote, log.CallType)
+        end)
+    end
+    
+    G2L["20"].CanvasSize = UDim2.new(0, 0, 0, #G2L["20"]:GetChildren() * 25)
+end
+
+-- Start the spy
+initializeHooking()
+print("Advanced Remote Spy Loaded - System & Interactive Tracking Active")
+
+return G2L["1"]
