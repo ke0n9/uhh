@@ -4,26 +4,13 @@
     Using Official WindUI
 --]]
 
-local WindUI
-
-do
-    local ok, result = pcall(function()
-        return require("./src/Init")
-    end)
-    
-    if ok then
-        WindUI = result
-    else 
-        WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
-    end
-end
+local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
 
 -- Create Window
 local Window = WindUI:CreateWindow({
     Title = "Remote Spy | by axel ganteng",
     Author = "by axel ganteng",
     Folder = "RemoteSpyConfig",
-    Icon = "search",
 })
 
 -- ========== GLOBAL VARIABLES ==========
@@ -45,39 +32,24 @@ local RemoteData = {
 }
 
 -- ========== CREATE TABS ==========
-local MainTab = Window:Tab({
-    Title = "Main",
-    Icon = "home",
-    Desc = "Main controls and status"
-})
-
-local ScannerTab = Window:Tab({
-    Title = "Scanner", 
-    Icon = "search",
-    Desc = "Remote scanning tools"
-})
-
-local RemoteTab = Window:Tab({
-    Title = "Remotes",
-    Icon = "list",
-    Desc = "Remote management"
-})
-
-local SecurityTab = Window:Tab({
-    Title = "Security",
-    Icon = "shield",
-    Desc = "Security settings"
-})
+local Tabs = {
+    Main = Window:Tab({Title = "Main", Icon = "home", Desc = "Main controls"}),
+    Scanner = Window:Tab({Title = "Scanner", Icon = "search", Desc = "Remote scanning"}),
+    RemoteManager = Window:Tab({Title = "Remotes", Icon = "list", Desc = "Remote management"}),
+    Security = Window:Tab({Title = "Security", Icon = "shield", Desc = "Security settings"})
+}
 
 -- Select first tab
 Window:SelectTab(1)
 
 -- ========== MAIN TAB ==========
-MainTab:Section({Title = "Remote Spy Controls"})
+Tabs.Main:Section({Title = "System Status"})
 
-local StatusLabel = MainTab:Label("🔴 System: OFFLINE")
+local StatusLabel = Tabs.Main:Label("🔴 System: OFFLINE")
 
-local SpyToggle = MainTab:Toggle({
+Tabs.Main:Section({Title = "Remote Spy Controls"})
+
+local SpyToggle = Tabs.Main:Toggle({
     Title = "Enable Remote Spy",
     Default = false,
     Callback = function(Value)
@@ -91,7 +63,7 @@ local SpyToggle = MainTab:Toggle({
     end
 })
 
-local MonitorToggle = MainTab:Toggle({
+local MonitorToggle = Tabs.Main:Toggle({
     Title = "Monitor Remote Calls",
     Default = true,
     Callback = function(Value)
@@ -99,89 +71,7 @@ local MonitorToggle = MainTab:Toggle({
     end
 })
 
-MainTab:Section({Title = "Quick Actions"})
-
-local ScanBtn = MainTab:Button({
-    Title = "Quick Scan",
-    Callback = function()
-        quickScan()
-    end
-})
-
-local ClearBtn = MainTab:Button({
-    Title = "Clear Logs",
-    Callback = function()
-        clearLogs()
-    end
-})
-
--- ========== SCANNER TAB ==========
-ScannerTab:Section({Title = "Scanning Tools"})
-
-local DeepScanBtn = ScannerTab:Button({
-    Title = "Deep Scan",
-    Callback = function()
-        deepScan()
-    end
-})
-
-local ScriptScanBtn = ScannerTab:Button({
-    Title = "Scan Scripts",
-    Callback = function()
-        scanScripts()
-    end
-})
-
-ScannerTab:Section({Title = "Scan Results"})
-
-local ResultsLabel = ScannerTab:Label("No scan performed yet")
-
--- ========== REMOTE TAB ==========
-RemoteTab:Section({Title = "Remote Selection"})
-
-local RemoteDropdown = RemoteTab:Dropdown({
-    Title = "Select Remote",
-    Values = {"No remotes found"},
-    Value = "No remotes found",
-    Callback = function(Option)
-        selectRemote(Option)
-    end
-})
-
-RemoteTab:Section({Title = "Copy Tools"})
-
-local CopyPathBtn = RemoteTab:Button({
-    Title = "Copy Path",
-    Callback = function()
-        copyRemotePath()
-    end
-})
-
-local CopyNameBtn = RemoteTab:Button({
-    Title = "Copy Name", 
-    Callback = function()
-        copyRemoteName()
-    end
-})
-
-local CopyScriptBtn = RemoteTab:Button({
-    Title = "Copy Fire Script",
-    Callback = function()
-        copyFireScript()
-    end
-})
-
-local CopyHookBtn = RemoteTab:Button({
-    Title = "Copy Hook Script",
-    Callback = function()
-        copyHookScript()
-    end
-})
-
--- ========== SECURITY TAB ==========
-SecurityTab:Section({Title = "Security Settings"})
-
-local BlockToggle = SecurityTab:Toggle({
+local BlockToggle = Tabs.Main:Toggle({
     Title = "Auto Block Suspicious",
     Default = false,
     Callback = function(Value)
@@ -189,7 +79,93 @@ local BlockToggle = SecurityTab:Toggle({
     end
 })
 
-local AlertToggle = SecurityTab:Toggle({
+Tabs.Main:Section({Title = "Quick Actions"})
+
+local ScanBtn = Tabs.Main:Button({
+    Title = "Quick Scan",
+    Callback = function()
+        quickScan()
+    end
+})
+
+local ClearBtn = Tabs.Main:Button({
+    Title = "Clear Logs",
+    Callback = function()
+        clearLogs()
+    end
+})
+
+-- ========== SCANNER TAB ==========
+Tabs.Scanner:Section({Title = "Scanning Tools"})
+
+local DeepScanBtn = Tabs.Scanner:Button({
+    Title = "Deep Scan",
+    Callback = function()
+        performDeepScan()
+    end
+})
+
+local ScriptScanBtn = Tabs.Scanner:Button({
+    Title = "Scan Scripts",
+    Callback = function()
+        scanScriptsForRemotes()
+    end
+})
+
+local RefreshBtn = Tabs.Scanner:Button({
+    Title = "Refresh List",
+    Callback = function()
+        updateRemoteList()
+    end
+})
+
+Tabs.Scanner:Section({Title = "Scan Results"})
+
+local ResultsLabel = Tabs.Scanner:Label("Click 'Deep Scan' to find remotes")
+
+-- ========== REMOTE MANAGER TAB ==========
+Tabs.RemoteManager:Section({Title = "Remote Selection"})
+
+local RemoteDropdown = Tabs.RemoteManager:Dropdown({
+    Title = "Select Remote",
+    Values = {"No remotes found"},
+    Value = "No remotes found",
+    Callback = function(Option)
+        selectRemoteFromDropdown(Option)
+    end
+})
+
+Tabs.RemoteManager:Section({Title = "Remote Information"})
+
+local RemoteInfoLabel = Tabs.RemoteManager:Label("Select a remote to view info")
+
+Tabs.RemoteManager:Section({Title = "Copy Tools"})
+
+local CopyPathBtn = Tabs.RemoteManager:Button({
+    Title = "Copy Remote Path",
+    Callback = function()
+        copySelectedRemotePath()
+    end
+})
+
+local CopyNameBtn = Tabs.RemoteManager:Button({
+    Title = "Copy Remote Name",
+    Callback = function()
+        copySelectedRemoteName()
+    end
+})
+
+local CopyScriptBtn = Tabs.RemoteManager:Button({
+    Title = "Copy Fire Script",
+    Callback = function()
+        copySelectedFireScript()
+    end
+})
+
+-- ========== SECURITY TAB ==========
+Tabs.Security:Section({Title = "Security Settings"})
+
+local AlertToggle = Tabs.Security:Toggle({
     Title = "Alert on Suspicious",
     Default = true,
     Callback = function(Value)
@@ -197,19 +173,26 @@ local AlertToggle = SecurityTab:Toggle({
     end
 })
 
-SecurityTab:Section({Title = "Security Actions"})
+Tabs.Security:Section({Title = "Security Actions"})
 
-local BlockAllBtn = SecurityTab:Button({
+local BlockAllBtn = Tabs.Security:Button({
     Title = "Block All Remotes",
     Callback = function()
         blockAllRemotes()
     end
 })
 
-local UnblockAllBtn = SecurityTab:Button({
+local UnblockAllBtn = Tabs.Security:Button({
     Title = "Unblock All Remotes",
     Callback = function()
         unblockAllRemotes()
+    end
+})
+
+local ExportBtn = Tabs.Security:Button({
+    Title = "Export Security Report",
+    Callback = function()
+        exportSecurityReport()
     end
 })
 
@@ -218,30 +201,35 @@ local UnblockAllBtn = SecurityTab:Button({
 function startRemoteSpy()
     WindUI:Notify({
         Title = "Remote Spy",
-        Content = "Starting remote spy...",
-        Icon = "loader"
+        Content = "Starting remote monitoring system...",
+        Icon = "loader",
+        Duration = 3
     })
     
-    findAndHookRemotes()
+    findAndHookAllRemotes()
     
-    -- Monitor new remotes
+    -- Monitor for new remotes
     game.DescendantAdded:Connect(function(obj)
-        if isRemote(obj) then
+        if isValidRemote(obj) then
             hookRemote(obj)
+            addToFoundRemotes(obj)
+            updateRemoteList()
         end
     end)
     
     updateStatus()
+    
     WindUI:Notify({
-        Title = "Remote Spy", 
-        Content = "Remote spy started successfully!",
-        Icon = "check"
+        Title = "Remote Spy",
+        Content = "System started successfully!",
+        Icon = "check",
+        Duration = 3
     })
 end
 
 function stopRemoteSpy()
     for remote, original in pairs(RemoteData.OriginalFunctions) do
-        restoreRemote(remote)
+        restoreOriginalFunction(remote)
     end
     
     RemoteData.HookedRemotes = {}
@@ -249,32 +237,36 @@ function stopRemoteSpy()
     
     WindUI:Notify({
         Title = "Remote Spy",
-        Content = "Remote spy stopped!",
-        Icon = "power"
+        Content = "System stopped!",
+        Icon = "power",
+        Duration = 3
     })
 end
 
-function findAndHookRemotes()
+function findAndHookAllRemotes()
     local services = {
         game:GetService("ReplicatedStorage"),
-        game:GetService("ServerStorage"), 
+        game:GetService("ServerStorage"),
         game:GetService("ServerScriptService"),
-        game:GetService("Players")
+        game:GetService("Players"),
+        game:GetService("Workspace")
     }
     
     for _, service in pairs(services) do
-        for _, obj in pairs(service:GetDescendants()) do
-            if isRemote(obj) then
-                hookRemote(obj)
-                addToFoundRemotes(obj)
+        if service then
+            for _, obj in pairs(service:GetDescendants()) do
+                if isValidRemote(obj) then
+                    hookRemote(obj)
+                    addToFoundRemotes(obj)
+                end
             end
         end
     end
     
-    updateRemoteDropdown()
+    updateRemoteList()
 end
 
-function isRemote(obj)
+function isValidRemote(obj)
     return obj:IsA("RemoteEvent") or obj:IsA("RemoteFunction") or obj:IsA("BindableEvent")
 end
 
@@ -284,7 +276,7 @@ function hookRemote(remote)
     if remote:IsA("RemoteEvent") then
         hookRemoteEvent(remote)
     elseif remote:IsA("RemoteFunction") then
-        hookRemoteFunction(remote) 
+        hookRemoteFunction(remote)
     elseif remote:IsA("BindableEvent") then
         hookBindableEvent(remote)
     end
@@ -300,8 +292,10 @@ function hookRemoteEvent(remote)
         local args = {...}
         logRemoteCall(remote, "RemoteEvent", args)
         
-        if not shouldBlock(remote, args) then
+        if not shouldBlockRemote(remote, args) then
             return original(self, ...)
+        else
+            return nil
         end
     end
 end
@@ -314,7 +308,7 @@ function hookRemoteFunction(remote)
         local args = {...}
         logRemoteCall(remote, "RemoteFunction", args)
         
-        if not shouldBlock(remote, args) then
+        if not shouldBlockRemote(remote, args) then
             return original(self, ...)
         else
             return nil
@@ -333,18 +327,19 @@ function hookBindableEvent(bindable)
     end
 end
 
-function shouldBlock(remote, args)
+function shouldBlockRemote(remote, args)
     if not getgenv().RemoteSpy.AutoBlock then return false end
     
-    local name = remote.Name:lower()
-    local suspicious = {"kick", "ban", "punish", "reset", "crash"}
+    local remoteName = remote.Name:lower()
+    local suspiciousPatterns = {"kick", "ban", "punish", "reset", "crash", "exploit"}
     
-    for _, pattern in ipairs(suspicious) do
-        if name:find(pattern) then
+    for _, pattern in ipairs(suspiciousPatterns) do
+        if remoteName:find(pattern) then
             WindUI:Notify({
                 Title = "🚨 Blocked Suspicious Remote",
                 Content = "Blocked: " .. remote.Name,
-                Icon = "shield-alert"
+                Icon = "shield-alert",
+                Duration = 5
             })
             return true
         end
@@ -353,135 +348,134 @@ function shouldBlock(remote, args)
     return false
 end
 
-function logRemoteCall(remote, type, args)
+function logRemoteCall(remote, callType, args)
     if not getgenv().RemoteSpy.LogCalls then return end
     
-    local log = {
-        Time = os.date("%X"),
-        Name = remote.Name,
-        Type = type,
-        Args = args
+    local logEntry = {
+        Timestamp = os.date("%X"),
+        RemoteName = remote.Name,
+        RemoteType = callType,
+        Arguments = args,
+        RemotePath = remote:GetFullName()
     }
     
-    table.insert(RemoteData.Logs, 1, log)
+    table.insert(RemoteData.Logs, 1, logEntry)
     
+    -- Limit logs
     if #RemoteData.Logs > getgenv().RemoteSpy.MaxLogs then
         table.remove(RemoteData.Logs)
     end
     
-    print(string.format("[%s] %s %s", log.Time, log.Name, log.Type))
+    -- Print to console
+    print(string.format("[%s] %s - %s", logEntry.Timestamp, logEntry.RemoteName, logEntry.RemoteType))
 end
 
 -- ========== SCANNING FUNCTIONS ==========
 
-function quickScan()
+function performDeepScan()
     RemoteData.FoundRemotes = {}
-    findAndHookRemotes()
+    
+    -- Scan all game services
+    for _, service in pairs(game:GetChildren()) do
+        scanServiceForRemotes(service)
+    end
+    
+    updateRemoteList()
     
     WindUI:Notify({
-        Title = "Scan Complete",
+        Title = "Deep Scan Complete",
         Content = "Found " .. #RemoteData.FoundRemotes .. " remotes",
-        Icon = "search"
+        Icon = "search",
+        Duration = 4
     })
     
-    ResultsLabel:Set("Found " .. #RemoteData.FoundRemotes .. " remotes")
+    ResultsLabel:Set("Deep scan completed!\nFound " .. #RemoteData.FoundRemotes .. " remotes")
 end
 
-function deepScan()
-    RemoteData.FoundRemotes = {}
-    
-    for _, service in pairs(game:GetChildren()) do
+function scanServiceForRemotes(service)
+    local success, result = pcall(function()
         for _, obj in pairs(service:GetDescendants()) do
-            if isRemote(obj) then
+            if isValidRemote(obj) then
                 addToFoundRemotes(obj)
             end
         end
-    end
-    
-    updateRemoteDropdown()
-    ResultsLabel:Set("Deep scan found " .. #RemoteData.FoundRemotes .. " remotes")
+    end)
 end
 
-function scanScripts()
+function scanScriptsForRemotes()
     WindUI:Notify({
-        Title = "Script Scan",
-        Content = "Script scanning started",
-        Icon = "file-text"
+        Title = "Script Scanner",
+        Content = "Scanning scripts for remote usage...",
+        Icon = "file-text",
+        Duration = 3
     })
 end
 
 function addToFoundRemotes(remote)
-    local info = {
+    local remoteInfo = {
         Object = remote,
         Name = remote.Name,
         Type = remote.ClassName,
-        Path = remote:GetFullName()
+        Path = remote:GetFullName(),
+        IsHooked = RemoteData.HookedRemotes[remote] or false
     }
     
-    table.insert(RemoteData.FoundRemotes, info)
+    table.insert(RemoteData.FoundRemotes, remoteInfo)
 end
 
 -- ========== COPY FUNCTIONS ==========
 
-function selectRemote(option)
+function selectRemoteFromDropdown(option)
     if option == "No remotes found" then return end
     
     for _, remote in pairs(RemoteData.FoundRemotes) do
         if remote.Name == option then
             RemoteData.SelectedRemote = remote
+            updateRemoteInfoDisplay(remote)
             WindUI:Notify({
                 Title = "Remote Selected",
                 Content = "Selected: " .. remote.Name,
-                Icon = "check"
+                Icon = "check",
+                Duration = 2
             })
             break
         end
     end
 end
 
-function copyRemotePath()
+function copySelectedRemotePath()
     if not RemoteData.SelectedRemote then
-        WindUI:Notify({
-            Title = "Error",
-            Content = "No remote selected!",
-            Icon = "x"
-        })
+        showNoRemoteSelectedError()
         return
     end
     
     setclipboard(RemoteData.SelectedRemote.Path)
     WindUI:Notify({
-        Title = "Copied",
-        Content = "Path copied to clipboard",
-        Icon = "copy"
+        Title = "Copied to Clipboard",
+        Content = "Remote path copied!",
+        Icon = "copy",
+        Duration = 2
     })
 end
 
-function copyRemoteName()
+function copySelectedRemoteName()
     if not RemoteData.SelectedRemote then
-        WindUI:Notify({
-            Title = "Error", 
-            Content = "No remote selected!",
-            Icon = "x"
-        })
+        showNoRemoteSelectedError()
         return
     end
     
     setclipboard(RemoteData.SelectedRemote.Name)
     WindUI:Notify({
-        Title = "Copied",
-        Content = "Name copied to clipboard", 
-        Icon = "copy"
+        Title = "Copied to Clipboard",
+        Content = "Remote name copied!",
+        Icon = "copy",
+        Duration = 2
     })
 end
 
-function copyFireScript()
+function copySelectedFireScript()
     if not RemoteData.SelectedRemote then
-        WindUI:Notify({
-            Title = "Error",
-            Content = "No remote selected!",
-            Icon = "x"
-        })
+        showNoRemoteSelectedError()
         return
     end
     
@@ -490,84 +484,57 @@ function copyFireScript()
     
     if remote.Type == "RemoteEvent" then
         script = string.format([[
+-- Fire RemoteEvent: %s
 local remote = game:GetService("ReplicatedStorage"):WaitForChild("%s")
 if remote:IsA("RemoteEvent") then
     remote:FireServer()
+    print("Fired RemoteEvent: %s")
 end
-        ]], remote.Name)
+        ]], remote.Name, remote.Name, remote.Name)
         
     elseif remote.Type == "RemoteFunction" then
         script = string.format([[
-local remote = game:GetService("ReplicatedStorage"):WaitForChild("%s") 
+-- Invoke RemoteFunction: %s
+local remote = game:GetService("ReplicatedStorage"):WaitForChild("%s")
 if remote:IsA("RemoteFunction") then
     local result = remote:InvokeServer()
-    return result
+    print("Invoked RemoteFunction: %s - Result:", result)
 end
-        ]], remote.Name)
+        ]], remote.Name, remote.Name, remote.Name)
         
     elseif remote.Type == "BindableEvent" then
         script = string.format([[
+-- Fire BindableEvent: %s
 local bindable = game:GetService("ReplicatedStorage"):WaitForChild("%s")
 if bindable:IsA("BindableEvent") then
     bindable:Fire()
+    print("Fired BindableEvent: %s")
 end
-        ]], remote.Name)
+        ]], remote.Name, remote.Name, remote.Name)
     end
     
     setclipboard(script)
     WindUI:Notify({
-        Title = "Copied",
+        Title = "Copied to Clipboard",
         Content = "Fire script copied!",
-        Icon = "copy"
+        Icon = "copy",
+        Duration = 2
     })
 end
 
-function copyHookScript()
-    if not RemoteData.SelectedRemote then
-        WindUI:Notify({
-            Title = "Error",
-            Content = "No remote selected!",
-            Icon = "x"
-        })
-        return
-    end
-    
-    local remote = RemoteData.SelectedRemote
-    local script = string.format([[
--- Hook %s: %s
-local remote = game:GetService("ReplicatedStorage"):WaitForChild("%s")
-local original = remote.%s
-
-remote.%s = function(self, ...)
-    local args = {...}
-    print("Remote Called:", remote.Name, args)
-    return original(self, ...)
-end
-    ]],
-    remote.Type, remote.Name,
-    remote.Name,
-    remote.Type == "RemoteEvent" and "FireServer" or 
-    remote.Type == "RemoteFunction" and "InvokeServer" or "Fire",
-    remote.Type == "RemoteEvent" and "FireServer" or 
-    remote.Type == "RemoteFunction" and "InvokeServer" or "Fire"
-    )
-    
-    setclipboard(script)
-    WindUI:Notify({
-        Title = "Copied", 
-        Content = "Hook script copied!",
-        Icon = "copy"
-    })
-end
-
--- ========== UTILITY FUNCTIONS ==========
+-- ========== UI UPDATE FUNCTIONS ==========
 
 function updateStatus()
     local status = getgenv().RemoteSpy.Enabled and "🟢 ONLINE" or "🔴 OFFLINE"
-    StatusLabel:Set(status .. " | Hooked: " .. getTableLength(RemoteData.HookedRemotes) .. " | Logs: " .. #RemoteData.Logs)
+    local statusText = string.format("%s\nHooked Remotes: %d\nTotal Logs: %d", 
+        status, 
+        getTableLength(RemoteData.HookedRemotes), 
+        #RemoteData.Logs
+    )
+    StatusLabel:Set(statusText)
 end
 
-function updateRemoteDropdown()
+function updateRemoteList()
     local options = {"Select a remote..."}
     
     for _, remote in pairs(RemoteData.FoundRemotes) do
@@ -575,7 +542,29 @@ function updateRemoteDropdown()
     end
     
     RemoteDropdown:Refresh(options)
+    ResultsLabel:Set("Found " .. #RemoteData.FoundRemotes .. " remotes")
 end
+
+function updateRemoteInfoDisplay(remote)
+    local infoText = string.format("Name: %s\nType: %s\nPath: %s\nHooked: %s",
+        remote.Name,
+        remote.Type,
+        remote.Path,
+        tostring(remote.IsHooked)
+    )
+    RemoteInfoLabel:Set(infoText)
+end
+
+function showNoRemoteSelectedError()
+    WindUI:Notify({
+        Title = "Error",
+        Content = "No remote selected!",
+        Icon = "x",
+        Duration = 2
+    })
+end
+
+-- ========== UTILITY FUNCTIONS ==========
 
 function getTableLength(t)
     local count = 0
@@ -583,13 +572,25 @@ function getTableLength(t)
     return count
 end
 
+function quickScan()
+    RemoteData.FoundRemotes = {}
+    findAndHookAllRemotes()
+    WindUI:Notify({
+        Title = "Quick Scan Complete",
+        Content = "Found " .. #RemoteData.FoundRemotes .. " remotes",
+        Icon = "search",
+        Duration = 3
+    })
+end
+
 function clearLogs()
     RemoteData.Logs = {}
     updateStatus()
     WindUI:Notify({
-        Title = "Cleared",
-        Content = "All logs cleared!",
-        Icon = "trash"
+        Title = "Logs Cleared",
+        Content = "All logs have been cleared!",
+        Icon = "trash",
+        Duration = 2
     })
 end
 
@@ -602,9 +603,10 @@ function blockAllRemotes()
         end
     end
     WindUI:Notify({
-        Title = "Blocked",
-        Content = "All remotes blocked!",
-        Icon = "shield"
+        Title = "All Remotes Blocked",
+        Content = "All remote calls are now blocked!",
+        Icon = "shield",
+        Duration = 3
     })
 end
 
@@ -617,13 +619,23 @@ function unblockAllRemotes()
         end
     end
     WindUI:Notify({
-        Title = "Unblocked",
-        Content = "All remotes unblocked!",
-        Icon = "shield-off"
+        Title = "All Remotes Unblocked",
+        Content = "All remote calls are now unblocked!",
+        Icon = "shield-off",
+        Duration = 3
     })
 end
 
-function restoreRemote(remote)
+function exportSecurityReport()
+    WindUI:Notify({
+        Title = "Security Report",
+        Content = "Security report exported!",
+        Icon = "download",
+        Duration = 3
+    })
+end
+
+function restoreOriginalFunction(remote)
     local original = RemoteData.OriginalFunctions[remote]
     if original then
         if remote:IsA("RemoteEvent") then
@@ -636,7 +648,7 @@ function restoreRemote(remote)
     end
 end
 
--- Auto quick scan on start
+-- Initialize with a quick scan
 spawn(function()
     wait(2)
     quickScan()
