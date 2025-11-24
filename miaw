@@ -18,9 +18,9 @@ end
 
 -- Create Window
 local Window = Rayfield:CreateWindow({
-   Name = "Combat Script",
-   LoadingTitle = "Loading Combat Systems...",
-   LoadingSubtitle = "by Colin",
+   Name = "tembak tembak dor dor",
+   LoadingTitle = "buahahha",
+   LoadingSubtitle = "by axel",
    ConfigurationSaving = {
       Enabled = true,
       FolderName = "CombatConfig",
