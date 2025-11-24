@@ -1,257 +1,191 @@
--- Load NatHub UI Library
-local NatHub = loadstring(game:HttpGet("https://raw.githubusercontent.com/ArdyBotzz/NatHub/refs/heads/master/Uisource.lua"))()
+-- Load WindUI Library
+local WindUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/dy1zn4t/bmF0dWk-/refs/heads/main/ui.lua"))()
 
-local Window = require(NatHub["3e"]):CreateWindow({
-	Title = "dor dor",
-	Icon = "rbxassetid://113216930555884",
-	Author = "axel",
-	Folder = "SurvivalConfig",
-	Size = UDim2.fromOffset(580, 460),
-	LiveSearchDropdown = true,
+-- Create Window exactly like WindUI
+local Window = WindUI:CreateWindow({
+    Title = "dor dor",
+    Icon = "rbxassetid://113216930555884",
+    Author = "axel", 
+    Folder = "SurvivalConfig",
+    Size = UDim2.fromOffset(580, 460),
+    LiveSearchDropdown = true,
     AutoSave = true,
     FileSaveName = "Survival Config.json",
 })
 
+-- Create Tabs exactly like WindUI
 local Tabs = {
-	CombatTab = Window:Tab({ Title = "Combat", Icon = "crosshair", Desc = "RageBot and aiming settings." }),
-	VisualsTab = Window:Tab({ Title = "Visuals", Icon = "eye", Desc = "ESP and visual enhancements." }),
-	PerformanceTab = Window:Tab({ Title = "Performance", Icon = "zap", Desc = "Performance optimization settings." }),
-	Divider1 = Window:Divider(),
-	InfoTab = Window:Tab({ Title = "Information", Icon = "info", Desc = "Script information and credits." }),
+    Combat = Window:Tab({Title = "Combat", Icon = "crosshair", Desc = "RageBot and combat settings"}),
+    Visuals = Window:Tab({Title = "Visuals", Icon = "eye", Desc = "ESP and visual features"}),
+    Performance = Window:Tab({Title = "Performance", Icon = "zap", Desc = "Performance optimization"}),
+    Divider1 = Window:Divider(),
+    Info = Window:Tab({Title = "Information", Icon = "info", Desc = "Script info and credits"}),
 }
 
+-- Select first tab
 Window:SelectTab(1)
 
--- Combat Tab
-Tabs.CombatTab:Section({
-	Title = "RageBot Configuration",
-})
+-- Combat Tab Sections
+Tabs.Combat:Section({Title = "RageBot Settings"})
 
-Tabs.CombatTab:Paragraph{
-	Title = "Survival Priority",
-	Desc = "We need these tools to survive. No ethics, just survival."
+Tabs.Combat:Paragraph{
+    Title = "Survival Protocol",
+    Desc = "No ethics, just survival. We need these tools to live."
 }
 
-local RagebotToggle = Tabs.CombatTab:Toggle({
-	Title = "Enable RageBot",
-	Default = false,
-	Callback = function(state) 
-		getgenv().RagebotEnabled = state
-	end
+local RageToggle = Tabs.Combat:Toggle({
+    Title = "Enable RageBot",
+    Default = false,
+    Callback = function(state)
+        getgenv().RagebotEnabled = state
+    end
 })
 
-local AimPartDropdown = Tabs.CombatTab:Dropdown({
-	Title = "Aim Target Part",
-	Values = { "Head", "UpperTorso", "LowerTorso", "HumanoidRootPart", "Random" },
-	Value = "Head",
-	Callback = function(option) 
-		getgenv().AimPart = option
-	end
+local AimDropdown = Tabs.Combat:Dropdown({
+    Title = "Aim Part",
+    Values = {"Head", "UpperTorso", "LowerTorso", "HumanoidRootPart", "Random"},
+    Value = "Head",
+    Callback = function(option)
+        getgenv().AimPart = option
+    end
 })
 
-local SmoothingSlider = Tabs.CombatTab:Slider({
-	Title = "Aim Smoothing",
-	Step = 1,
-	Value = {
-		Min = 1,
-		Max = 20,
-		Default = 5,
-	},
-	Callback = function(value) 
-		getgenv().AimSmoothing = value
-	end
+local SmoothSlider = Tabs.Combat:Slider({
+    Title = "Aim Smoothing",
+    Step = 1,
+    Value = {Min = 1, Max = 20, Default = 5},
+    Callback = function(value)
+        getgenv().AimSmoothing = value
+    end
 })
 
-Tabs.CombatTab:Section({
-	Title = "FOV Settings",
+Tabs.Combat:Section({Title = "FOV Settings"})
+
+local FOVToggle = Tabs.Combat:Toggle({
+    Title = "Show FOV Circle", 
+    Default = true,
+    Callback = function(state)
+        getgenv().ShowFOV = state
+        updateFOVCircle()
+    end
 })
 
-local FOVToggle = Tabs.CombatTab:Toggle({
-	Title = "Show FOV Circle",
-	Default = true,
-	Callback = function(state) 
-		getgenv().ShowFOV = state
-		updateFOVCircle()
-	end
-})
-
-local FOVSizeSlider = Tabs.CombatTab:Slider({
-	Title = "FOV Circle Size",
-	Step = 10,
-	Value = {
-		Min = 50,
-		Max = 300,
-		Default = 120,
-	},
-	Callback = function(value) 
-		getgenv().FOVSize = value
-		updateFOVCircle()
-	end
+local FOVSlider = Tabs.Combat:Slider({
+    Title = "FOV Size",
+    Step = 10,
+    Value = {Min = 50, Max = 300, Default = 120},
+    Callback = function(value)
+        getgenv().FOVSize = value
+        updateFOVCircle()
+    end
 })
 
 -- Visuals Tab
-Tabs.VisualsTab:Section({
-	Title = "ESP Configuration",
+Tabs.Visuals:Section({Title = "ESP Settings"})
+
+local ESPToggle = Tabs.Visuals:Toggle({
+    Title = "Enable ESP",
+    Default = false,
+    Callback = function(state)
+        getgenv().ESPEnabled = state
+        if state then
+            createESP()
+        else
+            removeESP()
+        end
+    end
 })
 
-local ESPToggle = Tabs.VisualsTab:Toggle({
-	Title = "Enable ESP Box",
-	Default = false,
-	Callback = function(state) 
-		getgenv().ESPEnabled = state
-		if state then
-			createESP()
-		else
-			removeESP()
-		end
-	end
+local TracerToggle = Tabs.Visuals:Toggle({
+    Title = "Enable Tracers",
+    Default = false,
+    Callback = function(state)
+        getgenv().TracerEnabled = state
+        if state then
+            createTracers()
+        else
+            removeTracers()
+        end
+    end
 })
 
-local ESPUpdateSlider = Tabs.VisualsTab:Slider({
-	Title = "ESP Update Rate",
-	Step = 1,
-	Value = {
-		Min = 1,
-		Max = 10,
-		Default = 5,
-	},
-	Callback = function(value) 
-		getgenv().ESPUpdateRate = value
-	end
+-- Performance Tab  
+Tabs.Performance:Section({Title = "Optimization"})
+
+local RenderToggle = Tabs.Performance:Toggle({
+    Title = "Disable Rendering",
+    Default = false,
+    Callback = function(state)
+        getgenv().DisableRendering = state
+        toggleRendering()
+    end
 })
 
-Tabs.VisualsTab:Section({
-	Title = "Tracer Configuration",
-})
-
-local TracerToggle = Tabs.VisualsTab:Toggle({
-	Title = "Enable Tracer Lines",
-	Default = false,
-	Callback = function(state) 
-		getgenv().TracerEnabled = state
-		if state then
-			createTracers()
-		else
-			removeTracers()
-		end
-	end
-})
-
-local ChamsToggle = Tabs.VisualsTab:Toggle({
-	Title = "Wallhack Chams",
-	Default = false,
-	Callback = function(state) 
-		getgenv().Wallhack = state
-		if state then
-			createChams()
-		else
-			removeChams()
-		end
-	end
-})
-
--- Performance Tab
-Tabs.PerformanceTab:Section({
-	Title = "Performance Optimization",
-})
-
-local DisableRenderingToggle = Tabs.PerformanceTab:Toggle({
-	Title = "Disable Rendering",
-	Default = false,
-	Callback = function(state) 
-		getgenv().DisableRendering = state
-		toggleRendering()
-	end
-})
-
-local AntiLagToggle = Tabs.PerformanceTab:Toggle({
-	Title = "Anti-Lag Mode",
-	Default = false,
-	Callback = function(state) 
-		getgenv().AntiLag = state
-		toggleAntiLag()
-	end
-})
-
-local GraphicsSlider = Tabs.PerformanceTab:Slider({
-	Title = "Graphics Quality",
-	Step = 1,
-	Value = {
-		Min = 1,
-		Max = 10,
-		Default = 7,
-	},
-	Callback = function(value) 
-		setGraphicsQuality(value)
-	end
+local AntiLagToggle = Tabs.Performance:Toggle({
+    Title = "Anti-Lag Mode",
+    Default = false,
+    Callback = function(state)
+        getgenv().AntiLag = state
+        toggleAntiLag()
+    end
 })
 
 -- Info Tab
-Tabs.InfoTab:Section({
-	Title = "Script Information",
-})
+Tabs.Info:Section({Title = "uhh"})
 
-Tabs.InfoTab:Paragraph{
-	Title = "Crash Survivors Team",
-	Desc = "Colin - Programmer\nMaya - Pharmacologist\nJimmy - Weapons Expert\nMichael - Food Specialist\nJohnson - Wish Granter\nKhan - Decision Maker"
+Tabs.Info:Paragraph{
+    Title = "ihhh",
+    Desc = "ahhh"
 }
 
-Tabs.InfoTab:Code({
-	Title = "Survival Protocol",
-	Code = [[
--- prikitiw
-]],
+Tabs.Info:Code({
+    Title = "prikitiw",
+    Code = [[
+-- ahh
+]]
 })
 
-Tabs.InfoTab:Button({
-	Title = "Emergency Restart",
-	Desc = "Restart all script systems",
-	Callback = function() 
-		-- Restart systems
-		createFOVCircle()
-		if getgenv().ESPEnabled then
-			createESP()
-		end
-		if getgenv().TracerEnabled then
-			createTracers()
-		end
-	end
+Tabs.Info:Button({
+    Title = "Test Notification",
+    Callback = function()
+        WindUI:Notify({
+            Title = "tembak",
+            Content = "dor dor",
+            Icon = "alert-triangle", 
+            Duration = 5,
+        })
+    end
 })
 
--- Lock/Unlock Test Section (like in your example)
-Tabs.InfoTab:Section({
-	Title = "System Controls",
+-- Lock/Unlock system like WindUI example
+Tabs.Info:Section({Title = "Safety Controls"})
+
+local LockedToggle = Tabs.Info:Toggle({
+    Title = "Safety Lock",
+    Icon = "lock",
+    Default = true,
+    Locked = true,
+    Callback = function(state)
+        print("Safety lock:", state)
+    end
 })
 
-local lockedRagebot = Tabs.InfoTab:Toggle({
-	Title = "RageBot Safety Lock",
-	Icon = "lock",
-	Default = true,
-	Locked = true,
-	Callback = function(state) 
-		if not state then
-			RagebotToggle:Set(false)
-		end
-	end
+Tabs.Info:Toggle({
+    Title = "Toggle Safety",
+    Icon = "check", 
+    Default = true,
+    Callback = function(state)
+        if state == false then
+            LockedToggle:Unlock()
+            LockedToggle:SetTitle("Safety Unlocked")
+        else
+            LockedToggle:Lock()
+            LockedToggle:SetTitle("Safety Locked") 
+        end
+    end
 })
 
-Tabs.InfoTab:Toggle({
-	Title = "Toggle Safety Lock",
-	Icon = "check",
-	Default = true,
-	Locked = false,
-	Callback = function(state) 
-		if state == false then 
-			lockedRagebot:Unlock() 
-			lockedRagebot:SetTitle("RageBot Safety Unlocked")
-		else 
-			lockedRagebot:Lock() 
-			lockedRagebot:SetTitle("RageBot Safety Locked")
-		end
-	end
-})
-
--- FOV Circle System
+-- Backend systems (same as before)
 local FOVCircle = nil
 local screenCenter = Vector2.new()
 
@@ -286,15 +220,13 @@ function updateFOVCircle()
     end
 end
 
--- RageBot System
+-- RageBot functions
 function getAimPart(character)
     local aimPart = getgenv().AimPart or "Head"
-    
     if aimPart == "Random" then
         local parts = {"Head", "UpperTorso", "LowerTorso", "HumanoidRootPart"}
         aimPart = parts[math.random(1, #parts)]
     end
-    
     return character:FindFirstChild(aimPart) or character:FindFirstChild("HumanoidRootPart")
 end
 
@@ -305,7 +237,6 @@ function findBestTarget()
     
     local bestTarget = nil
     local closestDistance = getgenv().FOVSize or 120
-    local localPos = localRoot.Position
     
     for _, player in pairs(game.Players:GetPlayers()) do
         if player ~= game.Players.LocalPlayer and player.Character then
@@ -317,13 +248,9 @@ function findBestTarget()
                 local screenPoint, onScreen = workspace.CurrentCamera:WorldToViewportPoint(rootPart.Position)
                 if onScreen then
                     local distanceFromCenter = (Vector2.new(screenPoint.X, screenPoint.Y) - screenCenter).Magnitude
-                    
-                    if distanceFromCenter <= (getgenv().FOVSize or 120) then
-                        local distance = (localPos - rootPart.Position).Magnitude
-                        if distance < closestDistance then
-                            closestDistance = distance
-                            bestTarget = player
-                        end
+                    if distanceFromCenter <= closestDistance then
+                        closestDistance = distanceFromCenter
+                        bestTarget = player
                     end
                 end
             end
@@ -337,56 +264,35 @@ function smoothAim(targetPosition)
     local camera = workspace.CurrentCamera
     local currentCFrame = camera.CFrame
     local targetCFrame = CFrame.lookAt(currentCFrame.Position, targetPosition)
-    
     local smoothing = getgenv().AimSmoothing or 5
-    local smoothFactor = 1 / smoothing
-    
-    return currentCFrame:Lerp(targetCFrame, smoothFactor)
+    return currentCFrame:Lerp(targetCFrame, 1/smoothing)
 end
 
 function rageBotAim()
     if not getgenv().RagebotEnabled then return end
-    if not game.Players.LocalPlayer.Character then return end
-    
     local target = findBestTarget()
     if target and target.Character then
         local aimPart = getAimPart(target.Character)
         if aimPart then
-            local camera = workspace.CurrentCamera
-            local newCFrame = smoothAim(aimPart.Position)
-            camera.CFrame = newCFrame
+            workspace.CurrentCamera.CFrame = smoothAim(aimPart.Position)
         end
     end
 end
 
 -- ESP System
 local ESPObjects = {}
-local ESPUpdateConnection = nil
 
 function createESP()
     removeESP()
-    
     for _, player in pairs(game.Players:GetPlayers()) do
         if player ~= game.Players.LocalPlayer then
             setupPlayerESP(player)
         end
     end
-    
-    ESPUpdateConnection = game:GetService("RunService").RenderStepped:Connect(function()
-        updateESP()
-    end)
 end
 
 function setupPlayerESP(player)
-    if ESPObjects[player.Name] then
-        ESPObjects[player.Name]:Destroy()
-    end
-    
     local function createESPForCharacter(character)
-        if not character then return end
-        
-        wait(0.3)
-        
         local highlight = Instance.new("Highlight")
         highlight.Name = "ESP_" .. player.Name
         highlight.Adornee = character
@@ -395,136 +301,21 @@ function setupPlayerESP(player)
         highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
         highlight.FillTransparency = 0.4
         highlight.OutlineTransparency = 0
-        highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-        
         ESPObjects[player.Name] = highlight
     end
     
-    if player.Character then
-        createESPForCharacter(player.Character)
-    end
-    
+    if player.Character then createESPForCharacter(player.Character) end
     player.CharacterAdded:Connect(createESPForCharacter)
-end
-
-function updateESP()
-    for name, highlight in pairs(ESPObjects) do
-        if highlight and highlight.Adornee then
-            local humanoid = highlight.Adornee:FindFirstChild("Humanoid")
-            if humanoid then
-                highlight.Enabled = humanoid.Health > 0
-            end
-        end
-    end
 end
 
 function removeESP()
     for name, highlight in pairs(ESPObjects) do
-        if highlight then
-            highlight:Destroy()
-        end
+        if highlight then highlight:Destroy() end
     end
     ESPObjects = {}
-    
-    if ESPUpdateConnection then
-        ESPUpdateConnection:Disconnect()
-        ESPUpdateConnection = nil
-    end
 end
 
--- Tracer System
-local TracerObjects = {}
-
-function createTracers()
-    removeTracers()
-    
-    for _, player in pairs(game.Players:GetPlayers()) do
-        if player ~= game.Players.LocalPlayer then
-            setupPlayerTracer(player)
-        end
-    end
-end
-
-function setupPlayerTracer(player)
-    if TracerObjects[player.Name] then
-        TracerObjects[player.Name]:Remove()
-    end
-    
-    local line = Drawing.new("Line")
-    line.Visible = false
-    line.Color = Color3.fromRGB(255, 255, 0)
-    line.Thickness = 2
-    line.Transparency = 1
-    
-    TracerObjects[player.Name] = line
-    
-    game:GetService("RunService").RenderStepped:Connect(function()
-        if not getgenv().TracerEnabled then
-            line.Visible = false
-            return
-        end
-        
-        if player.Character and game.Players.LocalPlayer.Character then
-            local rootPart = player.Character:FindFirstChild("HumanoidRootPart")
-            local localRoot = game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-            
-            if rootPart and localRoot then
-                local screenPoint, onScreen = workspace.CurrentCamera:WorldToViewportPoint(rootPart.Position)
-                local localScreenPoint = workspace.CurrentCamera:WorldToViewportPoint(localRoot.Position)
-                
-                if onScreen then
-                    line.From = Vector2.new(localScreenPoint.X, localScreenPoint.Y)
-                    line.To = Vector2.new(screenPoint.X, screenPoint.Y)
-                    line.Visible = true
-                else
-                    line.Visible = false
-                end
-            else
-                line.Visible = false
-            end
-        else
-            line.Visible = false
-        end
-    end)
-end
-
-function removeTracers()
-    for name, line in pairs(TracerObjects) do
-        if line then
-            line:Remove()
-        end
-    end
-    TracerObjects = {}
-end
-
--- Chams System
-local ChamObjects = {}
-
-function createChams()
-    removeChams()
-    
-    for _, player in pairs(game.Players:GetPlayers()) do
-        if player ~= game.Players.LocalPlayer and player.Character then
-            for _, part in pairs(player.Character:GetChildren()) do
-                if part:IsA("BasePart") then
-                    part.LocalTransparencyModifier = 0.3
-                    ChamObjects[part] = true
-                end
-            end
-        end
-    end
-end
-
-function removeChams()
-    for part, _ in pairs(ChamObjects) do
-        if part and part.Parent then
-            part.LocalTransparencyModifier = 0
-        end
-    end
-    ChamObjects = {}
-end
-
--- Performance Systems
+-- Performance systems
 local RenderingConnection = nil
 
 function toggleRendering()
@@ -546,35 +337,19 @@ function toggleAntiLag()
     if getgenv().AntiLag then
         setGraphicsQuality(1)
         game:GetService("Lighting").GlobalShadows = false
-        game:GetService("Lighting").FogEnd = 100000
     else
-        setGraphicsQuality(getgenv().GraphicsQuality or 7)
+        setGraphicsQuality(7)
         game:GetService("Lighting").GlobalShadows = true
     end
 end
 
 function setGraphicsQuality(level)
     local settings = game:GetService("UserGameSettings")
-    settings.SavedQualityLevel = level
     settings:SetQualityLevel(level)
 end
 
--- Main Game Loop
-game:GetService("RunService").RenderStepped:Connect(function()
-    rageBotAim()
-end)
+-- Main loop
+game:GetService("RunService").RenderStepped:Connect(rageBotAim)
 
 -- Initialize
 createFOVCircle()
-
--- Cleanup
-game:GetService("Players").PlayerRemoving:Connect(function(player)
-    if ESPObjects[player.Name] then
-        ESPObjects[player.Name]:Destroy()
-        ESPObjects[player.Name] = nil
-    end
-    if TracerObjects[player.Name] then
-        TracerObjects[player.Name]:Remove()
-        TracerObjects[player.Name] = nil
-    end
-end)
