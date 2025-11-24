@@ -2,9 +2,9 @@
 local WindUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/dy1zn4t/bmF0dWk-/refs/heads/main/ui.lua"))()
 
 local Window = WindUI:CreateWindow({
-    Title = "dor dor,
+    Title = "dor dor",
     Icon = "rbxassetid://113216930555884",
-    Author = "axel ganteng bgt",
+    Author = "axel",
     Folder = "CombatConfig",
     Size = UDim2.fromOffset(580, 460),
     LiveSearchDropdown = true,
@@ -17,6 +17,19 @@ local CombatTab = Window:Tab({Title = "Combat", Icon = "crosshair", Desc = "Comb
 local VisualsTab = Window:Tab({Title = "Visuals", Icon = "eye", Desc = "Visual features"})
 local PerformanceTab = Window:Tab({Title = "Performance", Icon = "zap", Desc = "Performance settings"})
 
+-- Initialize global variables
+getgenv().RagebotEnabled = false
+getgenv().AimPart = "Head"
+getgenv().AimSmoothing = 3
+getgenv().ShowFOV = true
+getgenv().FOVSize = 80
+getgenv().ESPEnabled = false
+getgenv().TracerEnabled = false
+getgenv().ChamsEnabled = false
+getgenv().DisableRendering = false
+getgenv().AntiLag = false
+getgenv().FPSBoost = false
+
 -- Combat Tab
 CombatTab:Section({Title = "Aimbot"})
 
@@ -25,6 +38,7 @@ local RageToggle = CombatTab:Toggle({
     Default = false,
     Callback = function(state)
         getgenv().RagebotEnabled = state
+        print("RageBot:", state)
     end
 })
 
@@ -34,6 +48,7 @@ local AimPart = CombatTab:Dropdown({
     Value = "Head",
     Callback = function(option)
         getgenv().AimPart = option
+        print("Aim Part:", option)
     end
 })
 
@@ -43,6 +58,7 @@ local SmoothSlider = CombatTab:Slider({
     Value = {Min = 1, Max = 10, Default = 3},
     Callback = function(value)
         getgenv().AimSmoothing = value
+        print("Smoothing:", value)
     end
 })
 
@@ -54,6 +70,7 @@ local FOVToggle = CombatTab:Toggle({
     Callback = function(state)
         getgenv().ShowFOV = state
         updateFOVCircle()
+        print("FOV Circle:", state)
     end
 })
 
@@ -64,6 +81,7 @@ local FOVSize = CombatTab:Slider({
     Callback = function(value)
         getgenv().FOVSize = value
         updateFOVCircle()
+        print("FOV Size:", value)
     end
 })
 
@@ -80,6 +98,7 @@ local ESPToggle = VisualsTab:Toggle({
         else
             removeESP()
         end
+        print("ESP:", state)
     end
 })
 
@@ -93,6 +112,7 @@ local TracerToggle = VisualsTab:Toggle({
         else
             removeTracers()
         end
+        print("Tracers:", state)
     end
 })
 
@@ -106,6 +126,7 @@ local ChamsToggle = VisualsTab:Toggle({
         else
             removeChams()
         end
+        print("Chams:", state)
     end
 })
 
@@ -118,6 +139,7 @@ local RenderToggle = PerformanceTab:Toggle({
     Callback = function(state)
         getgenv().DisableRendering = state
         toggleRendering()
+        print("Disable Rendering:", state)
     end
 })
 
@@ -127,6 +149,7 @@ local AntiLagToggle = PerformanceTab:Toggle({
     Callback = function(state)
         getgenv().AntiLag = state
         toggleAntiLag()
+        print("Anti Lag:", state)
     end
 })
 
@@ -136,6 +159,7 @@ local GraphicsSlider = PerformanceTab:Slider({
     Value = {Min = 1, Max = 10, Default = 7},
     Callback = function(value)
         setGraphicsQuality(value)
+        print("Graphics Level:", value)
     end
 })
 
@@ -145,51 +169,71 @@ local FPSBoost = PerformanceTab:Toggle({
     Callback = function(state)
         getgenv().FPSBoost = state
         toggleFPSBoost()
+        print("FPS Boost:", state)
     end
 })
 
 -- Backend Systems
 local FOVCircle = nil
 local screenCenter = Vector2.new()
+local ESPObjects = {}
+local TracerObjects = {}
+local ChamObjects = {}
+local RenderingConnection = nil
 
+-- FOV Circle System
 function createFOVCircle()
-    if FOVCircle then FOVCircle:Remove() end
+    if FOVCircle then 
+        FOVCircle:Remove()
+        FOVCircle = nil
+    end
     
     FOVCircle = Drawing.new("Circle")
-    FOVCircle.Visible = getgenv().ShowFOV or true
+    FOVCircle.Visible = getgenv().ShowFOV
     FOVCircle.Color = Color3.fromRGB(0, 255, 0)
     FOVCircle.Thickness = 2
     FOVCircle.NumSides = 32
-    FOVCircle.Radius = getgenv().FOVSize or 80
+    FOVCircle.Radius = getgenv().FOVSize
     FOVCircle.Filled = false
     FOVCircle.Transparency = 0.5
     
     local viewportSize = workspace.CurrentCamera.ViewportSize
     screenCenter = Vector2.new(viewportSize.X / 2, viewportSize.Y / 2)
     FOVCircle.Position = screenCenter
+    
+    print("FOV Circle Created - Size:", getgenv().FOVSize)
 end
 
 function updateFOVCircle()
     if FOVCircle then
-        FOVCircle.Visible = getgenv().ShowFOV or true
-        FOVCircle.Radius = getgenv().FOVSize or 80
+        FOVCircle.Visible = getgenv().ShowFOV
+        FOVCircle.Radius = getgenv().FOVSize
     else
         createFOVCircle()
     end
 end
 
--- Mobile-friendly RageBot (no key detection)
+-- Mobile-friendly RageBot
 function getAimPart(character)
-    local aimPart = getgenv().AimPart or "Head"
+    local aimPart = getgenv().AimPart
     if aimPart == "Random" then
         local parts = {"Head", "UpperTorso", "LowerTorso", "HumanoidRootPart"}
         aimPart = parts[math.random(1, #parts)]
     end
-    return character:FindFirstChild(aimPart) or character:FindFirstChild("HumanoidRootPart")
+    
+    local part = character:FindFirstChild(aimPart)
+    if not part then
+        part = character:FindFirstChild("HumanoidRootPart")
+    end
+    
+    return part
 end
 
 function findBestTarget()
-    if not game.Players.LocalPlayer.Character then return nil end
+    if not game.Players.LocalPlayer or not game.Players.LocalPlayer.Character then 
+        return nil 
+    end
+    
     local localRoot = game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
     if not localRoot then return nil end
     
@@ -207,7 +251,7 @@ function findBestTarget()
                 local screenPoint, onScreen = workspace.CurrentCamera:WorldToViewportPoint(rootPart.Position)
                 if onScreen then
                     local distanceFromCenter = (Vector2.new(screenPoint.X, screenPoint.Y) - screenCenter).Magnitude
-                    local fovSize = getgenv().FOVSize or 80
+                    local fovSize = getgenv().FOVSize
                     
                     if distanceFromCenter <= fovSize then
                         local distance = (localPos - rootPart.Position).Magnitude
@@ -228,7 +272,7 @@ function smoothAim(targetPosition)
     local camera = workspace.CurrentCamera
     local currentCFrame = camera.CFrame
     local targetCFrame = CFrame.lookAt(currentCFrame.Position, targetPosition)
-    local smoothing = getgenv().AimSmoothing or 3
+    local smoothing = getgenv().AimSmoothing
     local smoothFactor = 1 / smoothing
     
     return currentCFrame:Lerp(targetCFrame, smoothFactor)
@@ -236,7 +280,7 @@ end
 
 function rageBotAim()
     if not getgenv().RagebotEnabled then return end
-    if not game.Players.LocalPlayer.Character then return end
+    if not game.Players.LocalPlayer or not game.Players.LocalPlayer.Character then return end
     
     local target = findBestTarget()
     if target and target.Character then
@@ -249,8 +293,6 @@ function rageBotAim()
 end
 
 -- ESP System
-local ESPObjects = {}
-
 function createESP()
     removeESP()
     
@@ -266,7 +308,10 @@ function createESP()
                     highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
                     highlight.FillTransparency = 0.4
                     highlight.OutlineTransparency = 0
+                    highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+                    
                     ESPObjects[player.Name] = highlight
+                    print("ESP Created for:", player.Name)
                 end
             end
             
@@ -283,11 +328,10 @@ function removeESP()
         end
     end
     ESPObjects = {}
+    print("ESP Removed")
 end
 
 -- Tracer System
-local TracerObjects = {}
-
 function createTracers()
     removeTracers()
     
@@ -300,6 +344,7 @@ function createTracers()
             TracerObjects[player.Name] = line
         end
     end
+    print("Tracers Created")
 end
 
 function removeTracers()
@@ -309,11 +354,10 @@ function removeTracers()
         end
     end
     TracerObjects = {}
+    print("Tracers Removed")
 end
 
 -- Chams System
-local ChamObjects = {}
-
 function createChams()
     removeChams()
     
@@ -327,6 +371,7 @@ function createChams()
             end
         end
     end
+    print("Chams Created")
 end
 
 function removeChams()
@@ -336,22 +381,24 @@ function removeChams()
         end
     end
     ChamObjects = {}
+    print("Chams Removed")
 end
 
 -- Performance Systems
-local RenderingConnection = nil
-
 function toggleRendering()
     if RenderingConnection then
         RenderingConnection:Disconnect()
+        RenderingConnection = nil
     end
     
     if getgenv().DisableRendering then
         RenderingConnection = game:GetService("RunService").RenderStepped:Connect(function()
             game:GetService("RunService"):Set3dRenderingEnabled(false)
         end)
+        print("Rendering Disabled")
     else
         game:GetService("RunService"):Set3dRenderingEnabled(true)
+        print("Rendering Enabled")
     end
 end
 
@@ -360,9 +407,11 @@ function toggleAntiLag()
         setGraphicsQuality(1)
         game:GetService("Lighting").GlobalShadows = false
         game:GetService("Lighting").FogEnd = 100000
+        print("Anti Lag Enabled")
     else
         setGraphicsQuality(7)
         game:GetService("Lighting").GlobalShadows = true
+        print("Anti Lag Disabled")
     end
 end
 
@@ -373,6 +422,9 @@ function toggleFPSBoost()
                 effect.Enabled = false
             end
         end
+        print("FPS Boost Enabled")
+    else
+        print("FPS Boost Disabled")
     end
 end
 
@@ -381,8 +433,16 @@ function setGraphicsQuality(level)
     settings:SetQualityLevel(level)
 end
 
--- Main loop
+-- Update systems every frame
 game:GetService("RunService").RenderStepped:Connect(function()
+    -- Update FOV circle position
+    if FOVCircle then
+        local viewportSize = workspace.CurrentCamera.ViewportSize
+        screenCenter = Vector2.new(viewportSize.X / 2, viewportSize.Y / 2)
+        FOVCircle.Position = screenCenter
+    end
+    
+    -- RageBot aiming
     rageBotAim()
     
     -- Update tracers
@@ -414,5 +474,21 @@ game:GetService("RunService").RenderStepped:Connect(function()
     end
 end)
 
--- Initialize
+-- Initialize everything
 createFOVCircle()
+print("Combat Script Loaded Successfully!")
+print("RageBot: Ready")
+print("ESP System: Ready") 
+print("Performance Systems: Ready")
+
+-- Auto-cleanup when player leaves
+game:GetService("Players").PlayerRemoving:Connect(function(player)
+    if ESPObjects[player.Name] then
+        ESPObjects[player.Name]:Destroy()
+        ESPObjects[player.Name] = nil
+    end
+    if TracerObjects[player.Name] then
+        TracerObjects[player.Name]:Remove()
+        TracerObjects[player.Name] = nil
+    end
+end)
