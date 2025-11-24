@@ -6,6 +6,7 @@ _G.SystemRemotes = {}
 _G.ActiveHooks = {}
 _G.IsMinimized = false
 _G.IsUIVisible = true
+_G.IsUIClosed = false
 
 -- StarterGui.Remote Spy
 G2L["1"] = Instance.new("ScreenGui", game.CoreGui);
@@ -328,11 +329,33 @@ G2L["36"]["BorderColor3"] = Color3.fromRGB(100, 100, 100);
 G2L["36"]["Text"] = [[X]];
 G2L["36"]["Position"] = UDim2.new(0.9, 0, 0.15, 0);
 
+-- Reopen UI Button (Visible when UI is closed)
+G2L["37"] = Instance.new("TextButton", G2L["1"]);
+G2L["37"]["TextSize"] = 14;
+G2L["37"]["TextColor3"] = Color3.fromRGB(255, 255, 255);
+G2L["37"]["BackgroundColor3"] = Color3.fromRGB(40, 40, 40);
+G2L["37"]["FontFace"] = Font.new([[rbxasset://fonts/families/SourceSansPro.json]], Enum.FontWeight.Bold, Enum.FontStyle.Normal);
+G2L["37"]["Size"] = UDim2.new(0, 120, 0, 40);
+G2L["37"]["Name"] = [[ReopenButton]];
+G2L["37"]["BorderColor3"] = Color3.fromRGB(100, 100, 100);
+G2L["37"]["Text"] = [[Open Remote Spy]];
+G2L["37"]["Position"] = UDim2.new(0.02, 0, 0.02, 0);
+G2L["37"]["Visible"] = false;
+
+-- Mobile Drag Script
+G2L["38"] = Instance.new("LocalScript", G2L["2"]);
+G2L["38"]["Name"] = [[MobileDrag]];
+
+-- Mobile Drag Script for Minimized Frame
+G2L["39"] = Instance.new("LocalScript", G2L["33"]);
+G2L["39"]["Name"] = [[MinimizedDrag]];
+
 -- Function to minimize the UI
 local function minimizeUI()
     _G.IsMinimized = true
     G2L["2"].Visible = false
     G2L["33"].Visible = true
+    G2L["33"].Position = G2L["2"].Position
 end
 
 -- Function to restore the UI
@@ -340,6 +363,7 @@ local function restoreUI()
     _G.IsMinimized = false
     G2L["2"].Visible = true
     G2L["33"].Visible = false
+    G2L["2"].Position = G2L["33"].Position
 end
 
 -- Function to toggle UI visibility
@@ -353,9 +377,20 @@ local function toggleUIVisibility()
     G2L["32"].Text = _G.IsUIVisible and "Hide UI" or "Show UI"
 end
 
--- Function to close the UI completely
+-- Function to close the UI (soft close - can reopen)
 local function closeUI()
-    G2L["1"]:Destroy()
+    _G.IsUIClosed = true
+    G2L["2"].Visible = false
+    G2L["33"].Visible = false
+    G2L["37"].Visible = true
+end
+
+-- Function to reopen the UI
+local function reopenUI()
+    _G.IsUIClosed = false
+    G2L["37"].Visible = false
+    G2L["2"].Visible = true
+    _G.IsMinimized = false
 end
 
 -- Connect button events
@@ -364,6 +399,7 @@ G2L["35"].MouseButton1Click:Connect(restoreUI)
 G2L["31"].MouseButton1Click:Connect(closeUI)
 G2L["36"].MouseButton1Click:Connect(closeUI)
 G2L["32"].MouseButton1Click:Connect(toggleUIVisibility)
+G2L["37"].MouseButton1Click:Connect(reopenUI)
 
 -- Add hover effects for buttons
 local function setupButtonHover(button)
@@ -382,6 +418,95 @@ setupButtonHover(G2L["31"])
 setupButtonHover(G2L["32"])
 setupButtonHover(G2L["35"])
 setupButtonHover(G2L["36"])
+setupButtonHover(G2L["37"])
+
+-- Mobile Drag Script for Main Frame
+local function C_38()
+    local script = G2L["38"];
+    local frame = script.Parent
+    local UserInputService = game:GetService("UserInputService")
+    
+    local dragging
+    local dragInput
+    local dragStart
+    local startPos
+    
+    local function update(input)
+        local delta = input.Position - dragStart
+        frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
+    
+    frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            dragStart = input.Position
+            startPos = frame.Position
+    
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                end
+            end)
+        end
+    end)
+    
+    frame.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+            dragInput = input
+        end
+    end)
+    
+    UserInputService.InputChanged:Connect(function(input)
+        if input == dragInput and dragging then
+            update(input)
+        end
+    end)
+end;
+task.spawn(C_38);
+
+-- Mobile Drag Script for Minimized Frame
+local function C_39()
+    local script = G2L["39"];
+    local frame = script.Parent
+    local UserInputService = game:GetService("UserInputService")
+    
+    local dragging
+    local dragInput
+    local dragStart
+    local startPos
+    
+    local function update(input)
+        local delta = input.Position - dragStart
+        frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
+    
+    frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            dragStart = input.Position
+            startPos = frame.Position
+    
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                end
+            end)
+        end
+    end)
+    
+    frame.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+            dragInput = input
+        end
+    end)
+    
+    UserInputService.InputChanged:Connect(function(input)
+        if input == dragInput and dragging then
+            update(input)
+        end
+    end)
+end;
+task.spawn(C_39);
 
 -- [Previous functions remain the same - getPathToInstance, formatValue, Format, isSystemRemote, hookRemote, logRemoteCall, addInteractiveRemoteToList, addSystemRemoteToList, displayRemoteCode, updateCounter, tab switching, button functionalities, initializeHooking, showAllRemotes]
 
@@ -437,44 +562,4 @@ end)
 
 G2L["26"].MouseButton1Click:Connect(function()
     for _, frame in pairs({G2L["18"], G2L["19"], G2L["20"]}) do
-        for _, child in pairs(frame:GetChildren()) do
-            if child:IsA("TextButton") and child.Visible then
-                child:Destroy()
-            end
-        end
-    end
-    G2L["22"].Text = "Select a remote to view code..."
-    updateCounter()
-end)
-
--- Initialize remote hooking
-local function initializeHooking()
-    local folders = {
-        game:GetService("ReplicatedStorage"),
-        game:GetService("StarterGui"),
-        game:GetService("StarterPack"),
-        game:GetService("StarterPlayer"),
-        game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui"),
-        game:GetService("Players").LocalPlayer:WaitForChild("Backpack")
-    }
-    
-    for _, folder in pairs(folders) do
-        for _, remote in pairs(folder:GetDescendants()) do
-            if remote:IsA("RemoteEvent") or remote:IsA("RemoteFunction") then
-                hookRemote(remote)
-            end
-        end
-        
-        folder.DescendantAdded:Connect(function(descendant)
-            if descendant:IsA("RemoteEvent") or descendant:IsA("RemoteFunction") then
-                hookRemote(descendant)
-            end
-        end)
-    end
-end
-
--- Start the spy
-initializeHooking()
-print("Advanced Remote Spy Loaded - Minimize/Toggle Features Added")
-
-return G2L["1"]
+        for _, child in pairs(frame:
