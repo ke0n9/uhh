@@ -1,11 +1,26 @@
--- Load Rayfield UI
-local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+-- Test multiple Rayfield sources
+local Rayfield = nil
+local success, err = pcall(function()
+    Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+end)
+
+if not success then
+    -- Try alternative source
+    success, err = pcall(function()
+        Rayfield = loadstring(game:HttpGet('https://raw.githubusercontent.com/shlexware/Rayfield/main/source'))()
+    end)
+end
+
+if not success then
+    -- Use basic UI as fallback
+    Rayfield = loadstring(game:HttpGet('https://raw.githubusercontent.com/bloodball/-back-ups-for-libs/main/sol'))()
+end
 
 -- Create Window
 local Window = Rayfield:CreateWindow({
-   Name = "dor dor",
-   LoadingTitle = "prikitiw",
-   LoadingSubtitle = "by axel ganteng",
+   Name = "Combat Script",
+   LoadingTitle = "Loading Combat Systems...",
+   LoadingSubtitle = "by Colin",
    ConfigurationSaving = {
       Enabled = true,
       FolderName = "CombatConfig",
@@ -13,8 +28,6 @@ local Window = Rayfield:CreateWindow({
    },
    Discord = {
       Enabled = false,
-      Invite = "noinvite",
-      RememberJoins = true
    },
    KeySystem = false,
 })
@@ -24,7 +37,7 @@ local CombatTab = Window:CreateTab("Combat", "rbxassetid://4483362458")
 local VisualsTab = Window:CreateTab("Visuals", "rbxassetid://4483362458")
 local PerformanceTab = Window:CreateTab("Performance", "rbxassetid://4483362458")
 
--- Initialize global variables
+-- Initialize variables
 getgenv().RagebotEnabled = false
 getgenv().AimPart = "Head"
 getgenv().AimSmoothing = 3
@@ -37,48 +50,44 @@ getgenv().DisableRendering = false
 getgenv().AntiLag = false
 
 -- Combat Tab
-local CombatSection = CombatTab:CreateSection("Aimbot")
+CombatTab:CreateSection("Aimbot Settings")
 
-local RagebotToggle = CombatTab:CreateToggle({
+local RageToggle = CombatTab:CreateToggle({
    Name = "Enable RageBot",
    CurrentValue = false,
-   Flag = "RagebotToggle",
    Callback = function(Value)
        getgenv().RagebotEnabled = Value
        print("RageBot:", Value)
    end,
 })
 
-local AimPartDropdown = CombatTab:CreateDropdown({
+local AimDropdown = CombatTab:CreateDropdown({
    Name = "Aim Part",
    Options = {"Head", "UpperTorso", "LowerTorso", "HumanoidRootPart", "Random"},
    CurrentOption = "Head",
-   Flag = "AimPartDropdown",
    Callback = function(Option)
        getgenv().AimPart = Option
        print("Aim Part:", Option)
    end,
 })
 
-local SmoothingSlider = CombatTab:CreateSlider({
+local SmoothSlider = CombatTab:CreateSlider({
    Name = "Aim Smoothing",
    Range = {1, 10},
    Increment = 1,
    Suffix = "Level",
    CurrentValue = 3,
-   Flag = "SmoothingSlider",
    Callback = function(Value)
        getgenv().AimSmoothing = Value
        print("Smoothing:", Value)
    end,
 })
 
-local FOVSection = CombatTab:CreateSection("FOV Settings")
+CombatTab:CreateSection("FOV Settings")
 
 local FOVToggle = CombatTab:CreateToggle({
    Name = "Show FOV Circle",
    CurrentValue = true,
-   Flag = "FOVToggle",
    Callback = function(Value)
        getgenv().ShowFOV = Value
        updateFOVCircle()
@@ -92,7 +101,6 @@ local FOVSlider = CombatTab:CreateSlider({
    Increment = 5,
    Suffix = "Radius",
    CurrentValue = 80,
-   Flag = "FOVSlider",
    Callback = function(Value)
        getgenv().FOVSize = Value
        updateFOVCircle()
@@ -101,12 +109,11 @@ local FOVSlider = CombatTab:CreateSlider({
 })
 
 -- Visuals Tab
-local ESPSection = VisualsTab:CreateSection("ESP Settings")
+VisualsTab:CreateSection("ESP Settings")
 
 local ESPToggle = VisualsTab:CreateToggle({
    Name = "Enable ESP",
    CurrentValue = false,
-   Flag = "ESPToggle",
    Callback = function(Value)
        getgenv().ESPEnabled = Value
        if Value then
@@ -121,7 +128,6 @@ local ESPToggle = VisualsTab:CreateToggle({
 local TracerToggle = VisualsTab:CreateToggle({
    Name = "Enable Tracers",
    CurrentValue = false,
-   Flag = "TracerToggle",
    Callback = function(Value)
        getgenv().TracerEnabled = Value
        if Value then
@@ -136,7 +142,6 @@ local TracerToggle = VisualsTab:CreateToggle({
 local ChamsToggle = VisualsTab:CreateToggle({
    Name = "Enable Chams",
    CurrentValue = false,
-   Flag = "ChamsToggle",
    Callback = function(Value)
        getgenv().ChamsEnabled = Value
        if Value then
@@ -149,12 +154,11 @@ local ChamsToggle = VisualsTab:CreateToggle({
 })
 
 -- Performance Tab
-local PerformanceSection = PerformanceTab:CreateSection("Performance Settings")
+PerformanceTab:CreateSection("Performance Settings")
 
-local DisableRenderingToggle = PerformanceTab:CreateToggle({
+local RenderToggle = PerformanceTab:CreateToggle({
    Name = "Disable Rendering",
    CurrentValue = false,
-   Flag = "DisableRenderingToggle",
    Callback = function(Value)
        getgenv().DisableRendering = Value
        toggleRendering()
@@ -165,7 +169,6 @@ local DisableRenderingToggle = PerformanceTab:CreateToggle({
 local AntiLagToggle = PerformanceTab:CreateToggle({
    Name = "Anti Lag Mode",
    CurrentValue = false,
-   Flag = "AntiLagToggle",
    Callback = function(Value)
        getgenv().AntiLag = Value
        toggleAntiLag()
@@ -179,7 +182,6 @@ local GraphicsSlider = PerformanceTab:CreateSlider({
    Increment = 1,
    Suffix = "Level",
    CurrentValue = 7,
-   Flag = "GraphicsSlider",
    Callback = function(Value)
        setGraphicsQuality(Value)
        print("Graphics Level:", Value)
@@ -194,7 +196,7 @@ local TracerObjects = {}
 local ChamObjects = {}
 local RenderingConnection = nil
 
--- FOV Circle System
+-- FOV System
 function createFOVCircle()
     if FOVCircle then 
         FOVCircle:Remove()
@@ -433,7 +435,7 @@ function setGraphicsQuality(level)
     settings:SetQualityLevel(level)
 end
 
--- Main loop
+-- Main Game Loop
 game:GetService("RunService").RenderStepped:Connect(function()
     -- Update FOV circle position
     if FOVCircle then
@@ -476,7 +478,8 @@ end)
 
 -- Initialize
 createFOVCircle()
-print("Combat Script Loaded with Rayfield UI!")
+print("Combat Script Successfully Loaded!")
+print("UI should be visible now.")
 
 -- Auto-cleanup
 game:GetService("Players").PlayerRemoving:Connect(function(player)
@@ -490,5 +493,7 @@ game:GetService("Players").PlayerRemoving:Connect(function(player)
     end
 end)
 
--- Load configuration
-Rayfield:LoadConfiguration()
+-- Load configuration if using Rayfield
+if Rayfield.LoadConfiguration then
+    Rayfield:LoadConfiguration()
+end
