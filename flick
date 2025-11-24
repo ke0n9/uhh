@@ -1,21 +1,6 @@
--- Load WindUI Library
-local WindUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/dy1zn4t/bmF0dWk-/refs/heads/main/ui.lua"))()
-
-local Window = WindUI:CreateWindow({
-    Title = "dor dor",
-    Icon = "rbxassetid://113216930555884",
-    Author = "axel",
-    Folder = "CombatConfig",
-    Size = UDim2.fromOffset(580, 460),
-    LiveSearchDropdown = true,
-    AutoSave = true,
-    FileSaveName = "Combat Config.json",
-})
-
--- Create tabs
-local CombatTab = Window:Tab({Title = "Combat", Icon = "crosshair", Desc = "Combat settings"})
-local VisualsTab = Window:Tab({Title = "Visuals", Icon = "eye", Desc = "Visual features"})
-local PerformanceTab = Window:Tab({Title = "Performance", Icon = "zap", Desc = "Performance settings"})
+-- Load a working UI Library
+local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
+local Window = Library.CreateLib("Combat Script", "Sentinel")
 
 -- Initialize global variables
 getgenv().RagebotEnabled = false
@@ -28,150 +13,96 @@ getgenv().TracerEnabled = false
 getgenv().ChamsEnabled = false
 getgenv().DisableRendering = false
 getgenv().AntiLag = false
-getgenv().FPSBoost = false
+
+-- Create tabs
+local CombatTab = Window:NewTab("Combat")
+local VisualsTab = Window:NewTab("Visuals")
+local PerformanceTab = Window:NewTab("Performance")
 
 -- Combat Tab
-CombatTab:Section({Title = "Aimbot"})
+local CombatSection = CombatTab:NewSection("Aimbot")
 
-local RageToggle = CombatTab:Toggle({
-    Title = "Enable RageBot",
-    Default = false,
-    Callback = function(state)
-        getgenv().RagebotEnabled = state
-        print("RageBot:", state)
-    end
-})
+local RageToggle = CombatSection:NewToggle("Enable RageBot", "Toggle RageBot", function(state)
+    getgenv().RagebotEnabled = state
+    print("RageBot:", state)
+end)
 
-local AimPart = CombatTab:Dropdown({
-    Title = "Aim Part",
-    Values = {"Head", "UpperTorso", "LowerTorso", "HumanoidRootPart", "Random"},
-    Value = "Head",
-    Callback = function(option)
-        getgenv().AimPart = option
-        print("Aim Part:", option)
-    end
-})
+local AimPart = CombatSection:NewDropdown("Aim Part", {"Head", "UpperTorso", "LowerTorso", "HumanoidRootPart", "Random"}, function(option)
+    getgenv().AimPart = option
+    print("Aim Part:", option)
+end)
 
-local SmoothSlider = CombatTab:Slider({
-    Title = "Aim Smoothing",
-    Step = 1,
-    Value = {Min = 1, Max = 10, Default = 3},
-    Callback = function(value)
-        getgenv().AimSmoothing = value
-        print("Smoothing:", value)
-    end
-})
+local SmoothSlider = CombatSection:NewSlider("Aim Smoothing", "Smoothing level", 10, 1, function(value)
+    getgenv().AimSmoothing = value
+    print("Smoothing:", value)
+end)
 
-CombatTab:Section({Title = "FOV"})
+local FOVSection = CombatTab:NewSection("FOV Settings")
 
-local FOVToggle = CombatTab:Toggle({
-    Title = "Show FOV", 
-    Default = true,
-    Callback = function(state)
-        getgenv().ShowFOV = state
-        updateFOVCircle()
-        print("FOV Circle:", state)
-    end
-})
+local FOVToggle = FOVSection:NewToggle("Show FOV Circle", "Toggle FOV", function(state)
+    getgenv().ShowFOV = state
+    updateFOVCircle()
+    print("FOV Circle:", state)
+end)
 
-local FOVSize = CombatTab:Slider({
-    Title = "FOV Size",
-    Step = 5,
-    Value = {Min = 30, Max = 200, Default = 80},
-    Callback = function(value)
-        getgenv().FOVSize = value
-        updateFOVCircle()
-        print("FOV Size:", value)
-    end
-})
+local FOVSize = FOVSection:NewSlider("FOV Size", "FOV radius", 200, 30, function(value)
+    getgenv().FOVSize = value
+    updateFOVCircle()
+    print("FOV Size:", value)
+end)
 
 -- Visuals Tab
-VisualsTab:Section({Title = "ESP"})
+local VisualsSection = VisualsTab:NewSection("ESP Settings")
 
-local ESPToggle = VisualsTab:Toggle({
-    Title = "Enable ESP",
-    Default = false,
-    Callback = function(state)
-        getgenv().ESPEnabled = state
-        if state then
-            createESP()
-        else
-            removeESP()
-        end
-        print("ESP:", state)
+local ESPToggle = VisualsSection:NewToggle("Enable ESP", "Toggle ESP", function(state)
+    getgenv().ESPEnabled = state
+    if state then
+        createESP()
+    else
+        removeESP()
     end
-})
+    print("ESP:", state)
+end)
 
-local TracerToggle = VisualsTab:Toggle({
-    Title = "Enable Tracers",
-    Default = false,
-    Callback = function(state)
-        getgenv().TracerEnabled = state
-        if state then
-            createTracers()
-        else
-            removeTracers()
-        end
-        print("Tracers:", state)
+local TracerToggle = VisualsSection:NewToggle("Enable Tracers", "Toggle Tracers", function(state)
+    getgenv().TracerEnabled = state
+    if state then
+        createTracers()
+    else
+        removeTracers()
     end
-})
+    print("Tracers:", state)
+end)
 
-local ChamsToggle = VisualsTab:Toggle({
-    Title = "Enable Chams",
-    Default = false,
-    Callback = function(state)
-        getgenv().ChamsEnabled = state
-        if state then
-            createChams()
-        else
-            removeChams()
-        end
-        print("Chams:", state)
+local ChamsToggle = VisualsSection:NewToggle("Enable Chams", "Toggle Chams", function(state)
+    getgenv().ChamsEnabled = state
+    if state then
+        createChams()
+    else
+        removeChams()
     end
-})
+    print("Chams:", state)
+end)
 
--- Performance Tab  
-PerformanceTab:Section({Title = "Optimization"})
+-- Performance Tab
+local PerformanceSection = PerformanceTab:NewSection("Performance Settings")
 
-local RenderToggle = PerformanceTab:Toggle({
-    Title = "Disable Rendering",
-    Default = false,
-    Callback = function(state)
-        getgenv().DisableRendering = state
-        toggleRendering()
-        print("Disable Rendering:", state)
-    end
-})
+local RenderToggle = PerformanceSection:NewToggle("Disable Rendering", "Boost FPS", function(state)
+    getgenv().DisableRendering = state
+    toggleRendering()
+    print("Disable Rendering:", state)
+end)
 
-local AntiLagToggle = PerformanceTab:Toggle({
-    Title = "Anti Lag Mode",
-    Default = false,
-    Callback = function(state)
-        getgenv().AntiLag = state
-        toggleAntiLag()
-        print("Anti Lag:", state)
-    end
-})
+local AntiLagToggle = PerformanceSection:NewToggle("Anti Lag Mode", "Reduce lag", function(state)
+    getgenv().AntiLag = state
+    toggleAntiLag()
+    print("Anti Lag:", state)
+end)
 
-local GraphicsSlider = PerformanceTab:Slider({
-    Title = "Graphics Level",
-    Step = 1,
-    Value = {Min = 1, Max = 10, Default = 7},
-    Callback = function(value)
-        setGraphicsQuality(value)
-        print("Graphics Level:", value)
-    end
-})
-
-local FPSBoost = PerformanceTab:Toggle({
-    Title = "FPS Boost",
-    Default = false,
-    Callback = function(state)
-        getgenv().FPSBoost = state
-        toggleFPSBoost()
-        print("FPS Boost:", state)
-    end
-})
+local GraphicsSlider = PerformanceSection:NewSlider("Graphics Level", "Quality", 10, 1, function(value)
+    setGraphicsQuality(value)
+    print("Graphics Level:", value)
+end)
 
 -- Backend Systems
 local FOVCircle = nil
@@ -201,7 +132,7 @@ function createFOVCircle()
     screenCenter = Vector2.new(viewportSize.X / 2, viewportSize.Y / 2)
     FOVCircle.Position = screenCenter
     
-    print("FOV Circle Created - Size:", getgenv().FOVSize)
+    print("FOV Circle Created")
 end
 
 function updateFOVCircle()
@@ -213,7 +144,7 @@ function updateFOVCircle()
     end
 end
 
--- Mobile-friendly RageBot
+-- RageBot System
 function getAimPart(character)
     local aimPart = getgenv().AimPart
     if aimPart == "Random" then
@@ -273,7 +204,7 @@ function smoothAim(targetPosition)
     local currentCFrame = camera.CFrame
     local targetCFrame = CFrame.lookAt(currentCFrame.Position, targetPosition)
     local smoothing = getgenv().AimSmoothing
-    local smoothFactor = 1 / smoothing
+    local smoothFactor = 1 / math.max(smoothing, 1)
     
     return currentCFrame:Lerp(targetCFrame, smoothFactor)
 end
@@ -311,7 +242,6 @@ function createESP()
                     highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
                     
                     ESPObjects[player.Name] = highlight
-                    print("ESP Created for:", player.Name)
                 end
             end
             
@@ -319,6 +249,7 @@ function createESP()
             player.CharacterAdded:Connect(setupPlayer)
         end
     end
+    print("ESP Created")
 end
 
 function removeESP()
@@ -415,25 +346,12 @@ function toggleAntiLag()
     end
 end
 
-function toggleFPSBoost()
-    if getgenv().FPSBoost then
-        for _, effect in pairs(game:GetDescendants()) do
-            if effect:IsA("ParticleEmitter") or effect:IsA("Fire") or effect:IsA("Smoke") then
-                effect.Enabled = false
-            end
-        end
-        print("FPS Boost Enabled")
-    else
-        print("FPS Boost Disabled")
-    end
-end
-
 function setGraphicsQuality(level)
     local settings = game:GetService("UserGameSettings")
     settings:SetQualityLevel(level)
 end
 
--- Update systems every frame
+-- Main loop
 game:GetService("RunService").RenderStepped:Connect(function()
     -- Update FOV circle position
     if FOVCircle then
@@ -474,14 +392,11 @@ game:GetService("RunService").RenderStepped:Connect(function()
     end
 end)
 
--- Initialize everything
+-- Initialize
 createFOVCircle()
 print("Combat Script Loaded Successfully!")
-print("RageBot: Ready")
-print("ESP System: Ready") 
-print("Performance Systems: Ready")
 
--- Auto-cleanup when player leaves
+-- Auto-cleanup
 game:GetService("Players").PlayerRemoving:Connect(function(player)
     if ESPObjects[player.Name] then
         ESPObjects[player.Name]:Destroy()
