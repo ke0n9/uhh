@@ -1,35 +1,55 @@
--- Load NatHub UI Library
-local NatHubSuccess, NatHub = pcall(function()
-    return loadstring(game:HttpGet('https://raw.githubusercontent.com/ArdyBotzz/NatHub/refs/heads/master/NatLibrary/Source.lua'))()
-end)
+-- Load NatHub UI Library from multiple sources
+local NatHub = nil
+local sources = {
+    'https://raw.githubusercontent.com/ArdyBotzz/NatHub/refs/heads/master/Uisource.lua',
+    'https://raw.githubusercontent.com/ArdyBotzz/NatHub/refs/heads/master/NatLibrary/Source.lua',
+    'https://raw.githubusercontent.com/ArdyBotzz/NatHub/refs/heads/master/NatLibrary/SourceV2.lua'
+}
 
-if not NatHubSuccess then
-    NatHub = loadstring(game:HttpGet('https://raw.githubusercontent.com/ArdyBotzz/NatHub/refs/heads/master/NatLibrary/SourceV2.lua'))()
+for i, source in ipairs(sources) do
+    local success, result = pcall(function()
+        return loadstring(game:HttpGet(source))()
+    end)
+    if success and result then
+        NatHub = result
+        break
+    end
+end
+
+if not NatHub then
+    error("Failed to load NatHub UI from all sources")
 end
 
 -- Initialize NatHub UI
-local Window = NatHub:CreateWindow("dor dor", "ah ah ah")
+local Window = NatHub:CreateWindow("Survival Script", "Crash Survivors Hub")
 
--- Main Tab
+-- Create Tabs
 local CombatTab = Window:Tab("Combat", "rbxassetid://4483362458")
 local VisualsTab = Window:Tab("Visuals", "rbxassetid://4483362458") 
 local PerformanceTab = Window:Tab("Performance", "rbxassetid://4483362458")
 
--- Combat Section
-local CombatSection = CombatTab:Section("RageBot")
-local RagebotToggle = CombatSection:Toggle("RageBot", false, function(Value)
+-- Combat Tab Sections
+local RageBotSection = CombatTab:Section("RageBot Settings")
+local FOVSection = CombatTab:Section("FOV Settings")
+
+-- RageBot Settings
+local RagebotToggle = RageBotSection:Toggle("Enable RageBot", false, function(Value)
     getgenv().RagebotEnabled = Value
 end)
 
-local AimPartDropdown = CombatSection:Dropdown("Aim Part", {"Head", "UpperTorso", "LowerTorso", "HumanoidRootPart", "Random"}, "Head", function(Value)
+local AimPartDropdown = RageBotSection:Dropdown("Aim Part", {"Head", "UpperTorso", "LowerTorso", "HumanoidRootPart", "Random"}, "Head", function(Value)
     getgenv().AimPart = Value
 end)
 
-local SmoothingSlider = CombatSection:Slider("Aim Smoothing", 1, 20, 5, function(Value)
+local SmoothingSlider = RageBotSection:Slider("Aim Smoothing", 1, 20, 5, function(Value)
     getgenv().AimSmoothing = Value
 end)
 
-local FOVSection = CombatTab:Section("FOV Settings")
+local AimKeyDropdown = RageBotSection:Dropdown("Aim Key", {"MouseButton2", "LeftControl", "LeftAlt", "CapsLock", "Q"}, "MouseButton2", function(Value)
+    getgenv().AimKey = Value
+end)
+
+-- FOV Settings
 local FOVToggle = FOVSection:Toggle("Show FOV Circle", true, function(Value)
     getgenv().ShowFOV = Value
     updateFOVCircle()
@@ -45,9 +65,17 @@ local FOVColorPicker = FOVSection:ColorPicker("FOV Color", Color3.fromRGB(0, 255
     updateFOVCircle()
 end)
 
--- Visuals Section
+local FOVTransparencySlider = FOVSection:Slider("FOV Transparency", 0, 1, 0.5, function(Value)
+    getgenv().FOVTransparency = Value
+    updateFOVCircle()
+end)
+
+-- Visuals Tab Sections
 local ESPSection = VisualsTab:Section("ESP Settings")
-local ESPToggle = ESPSection:Toggle("ESP Box", false, function(Value)
+local TracerSection = VisualsTab:Section("Tracer Settings")
+
+-- ESP Settings
+local ESPToggle = ESPSection:Toggle("Enable ESP", false, function(Value)
     getgenv().ESPEnabled = Value
     if Value then
         createESP()
@@ -65,7 +93,13 @@ local ESPUpdateSlider = ESPSection:Slider("ESP Update Rate", 1, 10, 5, function(
     getgenv().ESPUpdateRate = Value
 end)
 
-local TracerToggle = ESPSection:Toggle("Tracer Lines", false, function(Value)
+local TeamColorToggle = ESPSection:Toggle("Team-Based Colors", true, function(Value)
+    getgenv().TeamColors = Value
+    updateAllColors()
+end)
+
+-- Tracer Settings
+local TracerToggle = TracerSection:Toggle("Enable Tracers", false, function(Value)
     getgenv().TracerEnabled = Value
     if Value then
         createTracers()
@@ -74,13 +108,25 @@ local TracerToggle = ESPSection:Toggle("Tracer Lines", false, function(Value)
     end
 end)
 
-local TracerColorPicker = ESPSection:ColorPicker("Tracer Color", Color3.fromRGB(255, 255, 0), function(Value)
+local TracerColorPicker = TracerSection:ColorPicker("Tracer Color", Color3.fromRGB(255, 255, 0), function(Value)
     getgenv().TracerColor = Value
     updateTracerColors()
 end)
 
--- Performance Section
+local ChamsToggle = ESPSection:Toggle("Wallhack Chams", false, function(Value)
+    getgenv().Wallhack = Value
+    if Value then
+        createChams()
+    else
+        removeChams()
+    end
+end)
+
+-- Performance Tab Sections
 local PerformanceSection = PerformanceTab:Section("Performance Settings")
+local GraphicsSection = PerformanceTab:Section("Graphics Settings")
+
+-- Performance Settings
 local DisableRenderingToggle = PerformanceSection:Toggle("Disable Rendering", false, function(Value)
     getgenv().DisableRendering = Value
     toggleRendering()
@@ -91,7 +137,13 @@ local AntiLagToggle = PerformanceSection:Toggle("Anti-Lag Mode", false, function
     toggleAntiLag()
 end)
 
-local GraphicsSlider = PerformanceSection:Slider("Graphics Quality", 1, 10, 7, function(Value)
+local ReduceParticlesToggle = PerformanceSection:Toggle("Reduce Particles", false, function(Value)
+    getgenv().ReduceParticles = Value
+    toggleParticles()
+end)
+
+-- Graphics Settings
+local GraphicsSlider = GraphicsSection:Slider("Graphics Quality", 1, 10, 7, function(Value)
     setGraphicsQuality(Value)
 end)
 
@@ -109,11 +161,19 @@ function createFOVCircle()
     FOVCircle.NumSides = 32
     FOVCircle.Radius = getgenv().FOVSize or 120
     FOVCircle.Filled = false
-    FOVCircle.Transparency = 1
+    FOVCircle.Transparency = getgenv().FOVTransparency or 0.5
     
     local viewportSize = workspace.CurrentCamera.ViewportSize
     screenCenter = Vector2.new(viewportSize.X / 2, viewportSize.Y / 2)
     FOVCircle.Position = screenCenter
+    
+    -- Keep FOV circle centered
+    game:GetService("RunService").RenderStepped:Connect(function()
+        if FOVCircle then
+            FOVCircle.Visible = getgenv().ShowFOV or true
+            FOVCircle.Position = screenCenter
+        end
+    end)
 end
 
 function updateFOVCircle()
@@ -121,6 +181,9 @@ function updateFOVCircle()
         FOVCircle.Visible = getgenv().ShowFOV or true
         FOVCircle.Radius = getgenv().FOVSize or 120
         FOVCircle.Color = getgenv().FOVColor or Color3.fromRGB(0, 255, 0)
+        FOVCircle.Transparency = getgenv().FOVTransparency or 0.5
+    else
+        createFOVCircle()
     end
 end
 
@@ -134,6 +197,17 @@ function getAimPart(character)
     end
     
     return character:FindFirstChild(aimPart) or character:FindFirstChild("HumanoidRootPart")
+end
+
+function isAimKeyPressed()
+    local aimKey = getgenv().AimKey or "MouseButton2"
+    local inputService = game:GetService("UserInputService")
+    
+    if aimKey == "MouseButton2" then
+        return inputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton2)
+    else
+        return inputService:IsKeyDown(Enum.KeyCode[aimKey])
+    end
 end
 
 function findBestTarget()
@@ -184,6 +258,7 @@ end
 
 function rageBotAim()
     if not getgenv().RagebotEnabled then return end
+    if not isAimKeyPressed() then return end
     if not game.Players.LocalPlayer.Character then return end
     
     local target = findBestTarget()
@@ -201,6 +276,18 @@ end
 local ESPObjects = {}
 local ESPUpdateConnection = nil
 local lastESPUpdate = 0
+
+function getTeamColor(player)
+    if getgenv().TeamColors then
+        if game.Players.LocalPlayer.Team == player.Team then
+            return Color3.fromRGB(0, 255, 0) -- Green for teammates
+        else
+            return Color3.fromRGB(255, 0, 0) -- Red for enemies
+        end
+    else
+        return getgenv().ESPColor or Color3.fromRGB(255, 0, 0)
+    end
+end
 
 function createESP()
     removeESP()
@@ -237,13 +324,13 @@ function setupPlayerESP(player)
     local function createESPForCharacter(character)
         if not character then return end
         
-        wait(0.3)
+        wait(0.3) -- Wait for character to load
         
         local highlight = Instance.new("Highlight")
         highlight.Name = "ESP_" .. player.Name
         highlight.Adornee = character
         highlight.Parent = game.CoreGui
-        highlight.FillColor = getgenv().ESPColor or Color3.fromRGB(255, 0, 0)
+        highlight.FillColor = getTeamColor(player)
         highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
         highlight.FillTransparency = 0.4
         highlight.OutlineTransparency = 0
@@ -255,195 +342,3 @@ function setupPlayerESP(player)
         }
     end
     
-    if player.Character then
-        createESPForCharacter(player.Character)
-    end
-    
-    player.CharacterAdded:Connect(createESPForCharacter)
-end
-
-function updateESP()
-    for name, espData in pairs(ESPObjects) do
-        if espData.Highlight and espData.Player and espData.Player.Character then
-            local character = espData.Player.Character
-            local humanoid = character:FindFirstChild("Humanoid")
-            
-            if humanoid and humanoid.Health > 0 then
-                espData.Highlight.Enabled = true
-                espData.Highlight.FillColor = getgenv().ESPColor or Color3.fromRGB(255, 0, 0)
-            else
-                espData.Highlight.Enabled = false
-            end
-        end
-    end
-end
-
-function removeESP()
-    for name, espData in pairs(ESPObjects) do
-        if espData.Highlight then
-            espData.Highlight:Destroy()
-        end
-    end
-    ESPObjects = {}
-    
-    if ESPUpdateConnection then
-        ESPUpdateConnection:Disconnect()
-        ESPUpdateConnection = nil
-    end
-end
-
-function updateESPColors()
-    for name, espData in pairs(ESPObjects) do
-        if espData.Highlight then
-            espData.Highlight.FillColor = getgenv().ESPColor or Color3.fromRGB(255, 0, 0)
-        end
-    end
-end
-
--- Tracer System
-local TracerObjects = {}
-
-function createTracers()
-    removeTracers()
-    
-    for _, player in pairs(game.Players:GetPlayers()) do
-        if player ~= game.Players.LocalPlayer then
-            setupPlayerTracer(player)
-        end
-    end
-end
-
-function setupPlayerTracer(player)
-    if TracerObjects[player.Name] then
-        TracerObjects[player.Name]:Remove()
-    end
-    
-    local line = Drawing.new("Line")
-    line.Visible = false
-    line.Color = getgenv().TracerColor or Color3.fromRGB(255, 255, 0)
-    line.Thickness = 1
-    line.Transparency = 1
-    
-    TracerObjects[player.Name] = line
-    
-    local lastTracerUpdate = 0
-    game:GetService("RunService").RenderStepped:Connect(function()
-        if not getgenv().TracerEnabled then
-            line.Visible = false
-            return
-        end
-        
-        local now = tick()
-        if now - lastTracerUpdate < 0.1 then return end
-        lastTracerUpdate = now
-        
-        if player.Character and game.Players.LocalPlayer.Character then
-            local rootPart = player.Character:FindFirstChild("HumanoidRootPart")
-            local localRoot = game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-            
-            if rootPart and localRoot then
-                local screenPoint, onScreen = workspace.CurrentCamera:WorldToViewportPoint(rootPart.Position)
-                local localScreenPoint = workspace.CurrentCamera:WorldToViewportPoint(localRoot.Position)
-                
-                if onScreen then
-                    line.From = Vector2.new(localScreenPoint.X, localScreenPoint.Y)
-                    line.To = Vector2.new(screenPoint.X, screenPoint.Y)
-                    line.Visible = true
-                    line.Color = getgenv().TracerColor or Color3.fromRGB(255, 255, 0)
-                else
-                    line.Visible = false
-                end
-            else
-                line.Visible = false
-            end
-        else
-            line.Visible = false
-        end
-    end)
-end
-
-function removeTracers()
-    for name, line in pairs(TracerObjects) do
-        if line then
-            line:Remove()
-        end
-    end
-    TracerObjects = {}
-end
-
-function updateTracerColors()
-    for name, line in pairs(TracerObjects) do
-        if line then
-            line.Color = getgenv().TracerColor or Color3.fromRGB(255, 255, 0)
-        end
-    end
-end
-
--- Performance Features
-local RenderingConnection = nil
-local AntiLagConnection = nil
-
-function toggleRendering()
-    if RenderingConnection then
-        RenderingConnection:Disconnect()
-        RenderingConnection = nil
-    end
-    
-    if getgenv().DisableRendering then
-        RenderingConnection = game:GetService("RunService").RenderStepped:Connect(function()
-            game:GetService("RunService"):Set3dRenderingEnabled(false)
-        end)
-    else
-        game:GetService("RunService"):Set3dRenderingEnabled(true)
-    end
-end
-
-function toggleAntiLag()
-    if AntiLagConnection then
-        AntiLagConnection:Disconnect()
-        AntiLagConnection = nil
-    end
-    
-    if getgenv().AntiLag then
-        setGraphicsQuality(1)
-        game:GetService("Lighting").GlobalShadows = false
-        game:GetService("Lighting").FogEnd = 100000
-        
-        for _, effect in pairs(game:GetService("Lighting"):GetChildren()) do
-            if effect:IsA("ParticleEmitter") or effect:IsA("Trail") then
-                effect.Enabled = false
-            end
-        end
-    else
-        setGraphicsQuality(getgenv().GraphicsQuality or 7)
-        game:GetService("Lighting").GlobalShadows = true
-    end
-end
-
-function setGraphicsQuality(level)
-    local settings = game:GetService("UserGameSettings")
-    settings.SavedQualityLevel = level
-    settings:SetQualityLevel(level)
-end
-
--- Main loops
-game:GetService("RunService").RenderStepped:Connect(function()
-    rageBotAim()
-end)
-
--- Initialize
-createFOVCircle()
-
--- Cleanup
-game:GetService("Players").PlayerRemoving:Connect(function(player)
-    if ESPObjects[player.Name] then
-        ESPObjects[player.Name].Highlight:Destroy()
-        ESPObjects[player.Name] = nil
-    end
-    if TracerObjects[player.Name] then
-        TracerObjects[player.Name]:Remove()
-        TracerObjects[player.Name] = nil
-    end
-end)
-
-NatHub:Initialize()
