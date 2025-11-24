@@ -5,7 +5,7 @@ local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 local Window = Rayfield:CreateWindow({
    Name = "Combat Script",
    LoadingTitle = "Combat Systems",
-   LoadingSubtitle = "by Colin",
+   LoadingSubtitle = "by axel ganteng",
    ConfigurationSaving = {
       Enabled = true,
       FolderName = "CombatConfig",
@@ -117,19 +117,6 @@ local TracerToggle = VisualsTab:CreateToggle({
    end,
 })
 
-local ChamsToggle = VisualsTab:CreateToggle({
-   Name = "Enable Chams",
-   CurrentValue = false,
-   Callback = function(Value)
-       getgenv().ChamsEnabled = Value
-       if Value then
-           createChams()
-       else
-           removeChams()
-       end
-   end,
-})
-
 -- Performance Tab
 PerformanceTab:CreateSection("Performance")
 
@@ -138,27 +125,11 @@ local RenderToggle = PerformanceTab:CreateToggle({
    CurrentValue = false,
    Callback = function(Value)
        getgenv().DisableRendering = Value
-       toggleRendering()
-   end,
-})
-
-local AntiLagToggle = PerformanceTab:CreateToggle({
-   Name = "Anti Lag Mode",
-   CurrentValue = false,
-   Callback = function(Value)
-       getgenv().AntiLag = Value
-       toggleAntiLag()
-   end,
-})
-
-local GraphicsSlider = PerformanceTab:CreateSlider({
-   Name = "Graphics Quality",
-   Range = {1, 10},
-   Increment = 1,
-   Suffix = "Level",
-   CurrentValue = 7,
-   Callback = function(Value)
-       setGraphicsQuality(Value)
+       if Value then
+           game:GetService("RunService"):Set3dRenderingEnabled(false)
+       else
+           game:GetService("RunService"):Set3dRenderingEnabled(true)
+       end
    end,
 })
 
@@ -167,8 +138,6 @@ local FOVCircle = nil
 local screenCenter = Vector2.new()
 local ESPObjects = {}
 local TracerObjects = {}
-local ChamObjects = {}
-local RenderingConnection = nil
 
 -- FOV System
 function createFOVCircle()
@@ -200,7 +169,7 @@ function updateFOVCircle()
     end
 end
 
--- RageBot System
+-- RageBot System - Only targets visible enemies
 function getAimPart(character)
     local aimPart = getgenv().AimPart
     if aimPart == "Random" then
@@ -214,6 +183,24 @@ function getAimPart(character)
     end
     
     return part
+end
+
+function isTargetVisible(targetPosition)
+    local camera = workspace.CurrentCamera
+    local origin = camera.CFrame.Position
+    local direction = (targetPosition - origin).Unit
+    local ray = Ray.new(origin, direction * 1000)
+    
+    local hit, position = workspace:FindPartOnRayWithIgnoreList(ray, {game.Players.LocalPlayer.Character})
+    
+    if hit then
+        local targetPlayer = game.Players:GetPlayerFromCharacter(hit.Parent)
+        if targetPlayer then
+            return true
+        end
+    end
+    
+    return false
 end
 
 function findBestTarget()
@@ -237,14 +224,19 @@ function findBestTarget()
             if humanoid and humanoid.Health > 0 and rootPart then
                 local screenPoint, onScreen = workspace.CurrentCamera:WorldToViewportPoint(rootPart.Position)
                 if onScreen then
-                    local distanceFromCenter = (Vector2.new(screenPoint.X, screenPoint.Y) - screenCenter).Magnitude
-                    local fovSize = getgenv().FOVSize
+                    -- Check if target is visible (not behind wall)
+                    local isVisible = isTargetVisible(rootPart.Position)
                     
-                    if distanceFromCenter <= fovSize then
-                        local distance = (localPos - rootPart.Position).Magnitude
-                        if distance < closestDistance then
-                            closestDistance = distance
-                            bestTarget = player
+                    if isVisible then
+                        local distanceFromCenter = (Vector2.new(screenPoint.X, screenPoint.Y) - screenCenter).Magnitude
+                        local fovSize = getgenv().FOVSize
+                        
+                        if distanceFromCenter <= fovSize then
+                            local distance = (localPos - rootPart.Position).Magnitude
+                            if distance < closestDistance then
+                                closestDistance = distance
+                                bestTarget = player
+                            end
                         end
                     end
                 end
@@ -338,63 +330,6 @@ function removeTracers()
         end
     end
     TracerObjects = {}
-end
-
--- Chams System
-function createChams()
-    removeChams()
-    
-    for _, player in pairs(game.Players:GetPlayers()) do
-        if player ~= game.Players.LocalPlayer and player.Character then
-            for _, part in pairs(player.Character:GetChildren()) do
-                if part:IsA("BasePart") then
-                    part.LocalTransparencyModifier = 0.3
-                    ChamObjects[part] = true
-                end
-            end
-        end
-    end
-end
-
-function removeChams()
-    for part, _ in pairs(ChamObjects) do
-        if part and part.Parent then
-            part.LocalTransparencyModifier = 0
-        end
-    end
-    ChamObjects = {}
-end
-
--- Performance Systems
-function toggleRendering()
-    if RenderingConnection then
-        RenderingConnection:Disconnect()
-        RenderingConnection = nil
-    end
-    
-    if getgenv().DisableRendering then
-        RenderingConnection = game:GetService("RunService").RenderStepped:Connect(function()
-            game:GetService("RunService"):Set3dRenderingEnabled(false)
-        end)
-    else
-        game:GetService("RunService"):Set3dRenderingEnabled(true)
-    end
-end
-
-function toggleAntiLag()
-    if getgenv().AntiLag then
-        setGraphicsQuality(1)
-        game:GetService("Lighting").GlobalShadows = false
-        game:GetService("Lighting").FogEnd = 100000
-    else
-        setGraphicsQuality(7)
-        game:GetService("Lighting").GlobalShadows = true
-    end
-end
-
-function setGraphicsQuality(level)
-    local settings = game:GetService("UserGameSettings")
-    settings:SetQualityLevel(level)
 end
 
 -- Main Game Loop
