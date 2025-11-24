@@ -1,6 +1,28 @@
--- Load a working UI Library
-local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
-local Window = Library.CreateLib("Combat Script", "Sentinel")
+-- Load Rayfield UI
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+
+-- Create Window
+local Window = Rayfield:CreateWindow({
+   Name = "dor dor",
+   LoadingTitle = "aha",
+   LoadingSubtitle = "by axel ganteng",
+   ConfigurationSaving = {
+      Enabled = true,
+      FolderName = "CombatConfig",
+      FileName = "CombatSettings"
+   },
+   Discord = {
+      Enabled = false,
+      Invite = "noinvite",
+      RememberJoins = true
+   },
+   KeySystem = false,
+})
+
+-- Create Tabs
+local CombatTab = Window:CreateTab("Combat", "rbxassetid://4483362458")
+local VisualsTab = Window:CreateTab("Visuals", "rbxassetid://4483362458")
+local PerformanceTab = Window:CreateTab("Performance", "rbxassetid://4483362458")
 
 -- Initialize global variables
 getgenv().RagebotEnabled = false
@@ -14,95 +36,155 @@ getgenv().ChamsEnabled = false
 getgenv().DisableRendering = false
 getgenv().AntiLag = false
 
--- Create tabs
-local CombatTab = Window:NewTab("Combat")
-local VisualsTab = Window:NewTab("Visuals")
-local PerformanceTab = Window:NewTab("Performance")
-
 -- Combat Tab
-local CombatSection = CombatTab:NewSection("Aimbot")
+local CombatSection = CombatTab:CreateSection("Aimbot")
 
-local RageToggle = CombatSection:NewToggle("Enable RageBot", "Toggle RageBot", function(state)
-    getgenv().RagebotEnabled = state
-    print("RageBot:", state)
-end)
+local RagebotToggle = CombatTab:CreateToggle({
+   Name = "Enable RageBot",
+   CurrentValue = false,
+   Flag = "RagebotToggle",
+   Callback = function(Value)
+       getgenv().RagebotEnabled = Value
+       print("RageBot:", Value)
+   end,
+})
 
-local AimPart = CombatSection:NewDropdown("Aim Part", {"Head", "UpperTorso", "LowerTorso", "HumanoidRootPart", "Random"}, function(option)
-    getgenv().AimPart = option
-    print("Aim Part:", option)
-end)
+local AimPartDropdown = CombatTab:CreateDropdown({
+   Name = "Aim Part",
+   Options = {"Head", "UpperTorso", "LowerTorso", "HumanoidRootPart", "Random"},
+   CurrentOption = "Head",
+   Flag = "AimPartDropdown",
+   Callback = function(Option)
+       getgenv().AimPart = Option
+       print("Aim Part:", Option)
+   end,
+})
 
-local SmoothSlider = CombatSection:NewSlider("Aim Smoothing", "Smoothing level", 10, 1, function(value)
-    getgenv().AimSmoothing = value
-    print("Smoothing:", value)
-end)
+local SmoothingSlider = CombatTab:CreateSlider({
+   Name = "Aim Smoothing",
+   Range = {1, 10},
+   Increment = 1,
+   Suffix = "Level",
+   CurrentValue = 3,
+   Flag = "SmoothingSlider",
+   Callback = function(Value)
+       getgenv().AimSmoothing = Value
+       print("Smoothing:", Value)
+   end,
+})
 
-local FOVSection = CombatTab:NewSection("FOV Settings")
+local FOVSection = CombatTab:CreateSection("FOV Settings")
 
-local FOVToggle = FOVSection:NewToggle("Show FOV Circle", "Toggle FOV", function(state)
-    getgenv().ShowFOV = state
-    updateFOVCircle()
-    print("FOV Circle:", state)
-end)
+local FOVToggle = CombatTab:CreateToggle({
+   Name = "Show FOV Circle",
+   CurrentValue = true,
+   Flag = "FOVToggle",
+   Callback = function(Value)
+       getgenv().ShowFOV = Value
+       updateFOVCircle()
+       print("FOV Circle:", Value)
+   end,
+})
 
-local FOVSize = FOVSection:NewSlider("FOV Size", "FOV radius", 200, 30, function(value)
-    getgenv().FOVSize = value
-    updateFOVCircle()
-    print("FOV Size:", value)
-end)
+local FOVSlider = CombatTab:CreateSlider({
+   Name = "FOV Size",
+   Range = {30, 200},
+   Increment = 5,
+   Suffix = "Radius",
+   CurrentValue = 80,
+   Flag = "FOVSlider",
+   Callback = function(Value)
+       getgenv().FOVSize = Value
+       updateFOVCircle()
+       print("FOV Size:", Value)
+   end,
+})
 
 -- Visuals Tab
-local VisualsSection = VisualsTab:NewSection("ESP Settings")
+local ESPSection = VisualsTab:CreateSection("ESP Settings")
 
-local ESPToggle = VisualsSection:NewToggle("Enable ESP", "Toggle ESP", function(state)
-    getgenv().ESPEnabled = state
-    if state then
-        createESP()
-    else
-        removeESP()
-    end
-    print("ESP:", state)
-end)
+local ESPToggle = VisualsTab:CreateToggle({
+   Name = "Enable ESP",
+   CurrentValue = false,
+   Flag = "ESPToggle",
+   Callback = function(Value)
+       getgenv().ESPEnabled = Value
+       if Value then
+           createESP()
+       else
+           removeESP()
+       end
+       print("ESP:", Value)
+   end,
+})
 
-local TracerToggle = VisualsSection:NewToggle("Enable Tracers", "Toggle Tracers", function(state)
-    getgenv().TracerEnabled = state
-    if state then
-        createTracers()
-    else
-        removeTracers()
-    end
-    print("Tracers:", state)
-end)
+local TracerToggle = VisualsTab:CreateToggle({
+   Name = "Enable Tracers",
+   CurrentValue = false,
+   Flag = "TracerToggle",
+   Callback = function(Value)
+       getgenv().TracerEnabled = Value
+       if Value then
+           createTracers()
+       else
+           removeTracers()
+       end
+       print("Tracers:", Value)
+   end,
+})
 
-local ChamsToggle = VisualsSection:NewToggle("Enable Chams", "Toggle Chams", function(state)
-    getgenv().ChamsEnabled = state
-    if state then
-        createChams()
-    else
-        removeChams()
-    end
-    print("Chams:", state)
-end)
+local ChamsToggle = VisualsTab:CreateToggle({
+   Name = "Enable Chams",
+   CurrentValue = false,
+   Flag = "ChamsToggle",
+   Callback = function(Value)
+       getgenv().ChamsEnabled = Value
+       if Value then
+           createChams()
+       else
+           removeChams()
+       end
+       print("Chams:", Value)
+   end,
+})
 
 -- Performance Tab
-local PerformanceSection = PerformanceTab:NewSection("Performance Settings")
+local PerformanceSection = PerformanceTab:CreateSection("Performance Settings")
 
-local RenderToggle = PerformanceSection:NewToggle("Disable Rendering", "Boost FPS", function(state)
-    getgenv().DisableRendering = state
-    toggleRendering()
-    print("Disable Rendering:", state)
-end)
+local DisableRenderingToggle = PerformanceTab:CreateToggle({
+   Name = "Disable Rendering",
+   CurrentValue = false,
+   Flag = "DisableRenderingToggle",
+   Callback = function(Value)
+       getgenv().DisableRendering = Value
+       toggleRendering()
+       print("Disable Rendering:", Value)
+   end,
+})
 
-local AntiLagToggle = PerformanceSection:NewToggle("Anti Lag Mode", "Reduce lag", function(state)
-    getgenv().AntiLag = state
-    toggleAntiLag()
-    print("Anti Lag:", state)
-end)
+local AntiLagToggle = PerformanceTab:CreateToggle({
+   Name = "Anti Lag Mode",
+   CurrentValue = false,
+   Flag = "AntiLagToggle",
+   Callback = function(Value)
+       getgenv().AntiLag = Value
+       toggleAntiLag()
+       print("Anti Lag:", Value)
+   end,
+})
 
-local GraphicsSlider = PerformanceSection:NewSlider("Graphics Level", "Quality", 10, 1, function(value)
-    setGraphicsQuality(value)
-    print("Graphics Level:", value)
-end)
+local GraphicsSlider = PerformanceTab:CreateSlider({
+   Name = "Graphics Quality",
+   Range = {1, 10},
+   Increment = 1,
+   Suffix = "Level",
+   CurrentValue = 7,
+   Flag = "GraphicsSlider",
+   Callback = function(Value)
+       setGraphicsQuality(Value)
+       print("Graphics Level:", Value)
+   end,
+})
 
 -- Backend Systems
 local FOVCircle = nil
@@ -394,7 +476,7 @@ end)
 
 -- Initialize
 createFOVCircle()
-print("Combat Script Loaded Successfully!")
+print("Combat Script Loaded with Rayfield UI!")
 
 -- Auto-cleanup
 game:GetService("Players").PlayerRemoving:Connect(function(player)
@@ -407,3 +489,6 @@ game:GetService("Players").PlayerRemoving:Connect(function(player)
         TracerObjects[player.Name] = nil
     end
 end)
+
+-- Load configuration
+Rayfield:LoadConfiguration()
