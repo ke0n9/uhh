@@ -4,6 +4,8 @@ _G.Code = ""
 _G.RemoteLogs = {}
 _G.SystemRemotes = {}
 _G.ActiveHooks = {}
+_G.IsMinimized = false
+_G.IsUIVisible = true
 
 -- StarterGui.Remote Spy
 G2L["1"] = Instance.new("ScreenGui", game.CoreGui);
@@ -18,6 +20,7 @@ G2L["2"]["BackgroundColor3"] = Color3.fromRGB(30, 30, 30);
 G2L["2"]["Size"] = UDim2.new(0, 600, 0, 400);
 G2L["2"]["Position"] = UDim2.new(0.1, 0, 0.1, 0);
 G2L["2"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
+G2L["2"]["Name"] = [[MainFrame]];
 
 -- StarterGui.Remote Spy.Frame.TopBar
 G2L["3"] = Instance.new("Frame", G2L["2"]);
@@ -36,11 +39,47 @@ G2L["4"]["TextSize"] = 14;
 G2L["4"]["FontFace"] = Font.new([[rbxasset://fonts/families/Arial.json]], Enum.FontWeight.Bold, Enum.FontStyle.Normal);
 G2L["4"]["TextColor3"] = Color3.fromRGB(255, 255, 255);
 G2L["4"]["BackgroundTransparency"] = 1;
-G2L["4"]["Size"] = UDim2.new(0, 100, 0, 25);
+G2L["4"]["Size"] = UDim2.new(0, 150, 0, 25);
 G2L["4"]["BorderColor3"] = Color3.fromRGB(255, 255, 255);
 G2L["4"]["Text"] = [[Advanced Remote Spy]];
 G2L["4"]["Name"] = [[Name]];
 G2L["4"]["Position"] = UDim2.new(0.02, 0, 0, 0);
+
+-- StarterGui.Remote Spy.Frame.TopBar.MinimizeButton
+G2L["30"] = Instance.new("TextButton", G2L["3"]);
+G2L["30"]["TextSize"] = 14;
+G2L["30"]["TextColor3"] = Color3.fromRGB(255, 255, 255);
+G2L["30"]["BackgroundColor3"] = Color3.fromRGB(40, 40, 40);
+G2L["30"]["FontFace"] = Font.new([[rbxasset://fonts/families/SourceSansPro.json]], Enum.FontWeight.Bold, Enum.FontStyle.Normal);
+G2L["30"]["Size"] = UDim2.new(0, 20, 0, 20);
+G2L["30"]["Name"] = [[MinimizeButton]];
+G2L["30"]["BorderColor3"] = Color3.fromRGB(100, 100, 100);
+G2L["30"]["Text"] = [[_]];
+G2L["30"]["Position"] = UDim2.new(0.92, 0, 0.1, 0);
+
+-- StarterGui.Remote Spy.Frame.TopBar.CloseButton
+G2L["31"] = Instance.new("TextButton", G2L["3"]);
+G2L["31"]["TextSize"] = 14;
+G2L["31"]["TextColor3"] = Color3.fromRGB(255, 255, 255);
+G2L["31"]["BackgroundColor3"] = Color3.fromRGB(40, 40, 40);
+G2L["31"]["FontFace"] = Font.new([[rbxasset://fonts/families/SourceSansPro.json]], Enum.FontWeight.Bold, Enum.FontStyle.Normal);
+G2L["31"]["Size"] = UDim2.new(0, 20, 0, 20);
+G2L["31"]["Name"] = [[CloseButton]];
+G2L["31"]["BorderColor3"] = Color3.fromRGB(100, 100, 100);
+G2L["31"]["Text"] = [[X]];
+G2L["31"]["Position"] = UDim2.new(0.96, 0, 0.1, 0);
+
+-- StarterGui.Remote Spy.Frame.TopBar.ToggleUIButton
+G2L["32"] = Instance.new("TextButton", G2L["3"]);
+G2L["32"]["TextSize"] = 12;
+G2L["32"]["TextColor3"] = Color3.fromRGB(255, 255, 255);
+G2L["32"]["BackgroundColor3"] = Color3.fromRGB(40, 40, 40);
+G2L["32"]["FontFace"] = Font.new([[rbxasset://fonts/families/SourceSansPro.json]], Enum.FontWeight.Bold, Enum.FontStyle.Normal);
+G2L["32"]["Size"] = UDim2.new(0, 60, 0, 20);
+G2L["32"]["Name"] = [[ToggleUIButton]];
+G2L["32"]["BorderColor3"] = Color3.fromRGB(100, 100, 100);
+G2L["32"]["Text"] = [[Hide UI]];
+G2L["32"]["Position"] = UDim2.new(0.8, 0, 0.1, 0);
 
 -- StarterGui.Remote Spy.Frame.Tabs
 G2L["14"] = Instance.new("Frame", G2L["2"]);
@@ -241,143 +280,110 @@ G2L["29"]["BorderColor3"] = Color3.fromRGB(80, 80, 80);
 G2L["29"]["Text"] = [[SystemRemote]];
 G2L["29"]["Visible"] = false;
 
--- Function to detect system vs interactive remotes
-local function isSystemRemote(remote)
-    local path = getPathToInstance(remote)
-    return string.find(path:lower(), "system") or 
-           string.find(path:lower(), "core") or
-           string.find(path:lower(), "internal") or
-           string.find(remote.Name:lower(), "system") or
-           string.find(remote.Name:lower(), "core") or
-           string.find(remote.Name:lower(), "internal")
+-- Minimized Frame
+G2L["33"] = Instance.new("Frame", G2L["1"]);
+G2L["33"]["BorderSizePixel"] = 0;
+G2L["33"]["BackgroundColor3"] = Color3.fromRGB(25, 25, 25);
+G2L["33"]["Size"] = UDim2.new(0, 200, 0, 30);
+G2L["33"]["Position"] = UDim2.new(0.1, 0, 0.1, 0);
+G2L["33"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
+G2L["33"]["Name"] = [[MinimizedFrame]];
+G2L["33"]["Visible"] = false;
+
+-- Minimized Frame Title
+G2L["34"] = Instance.new("TextLabel", G2L["33"]);
+G2L["34"]["BorderSizePixel"] = 0;
+G2L["34"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
+G2L["34"]["TextSize"] = 12;
+G2L["34"]["FontFace"] = Font.new([[rbxasset://fonts/families/Arial.json]], Enum.FontWeight.Bold, Enum.FontStyle.Normal);
+G2L["34"]["TextColor3"] = Color3.fromRGB(255, 255, 255);
+G2L["34"]["BackgroundTransparency"] = 1;
+G2L["34"]["Size"] = UDim2.new(0, 120, 0, 30);
+G2L["34"]["BorderColor3"] = Color3.fromRGB(255, 255, 255);
+G2L["34"]["Text"] = [[Remote Spy (Minimized)]];
+G2L["34"]["Name"] = [[MinimizedTitle]];
+G2L["34"]["Position"] = UDim2.new(0.1, 0, 0, 0);
+
+-- Minimized Frame Restore Button
+G2L["35"] = Instance.new("TextButton", G2L["33"]);
+G2L["35"]["TextSize"] = 14;
+G2L["35"]["TextColor3"] = Color3.fromRGB(255, 255, 255);
+G2L["35"]["BackgroundColor3"] = Color3.fromRGB(40, 40, 40);
+G2L["35"]["FontFace"] = Font.new([[rbxasset://fonts/families/SourceSansPro.json]], Enum.FontWeight.Bold, Enum.FontStyle.Normal);
+G2L["35"]["Size"] = UDim2.new(0, 20, 0, 20);
+G2L["35"]["Name"] = [[RestoreButton]];
+G2L["35"]["BorderColor3"] = Color3.fromRGB(100, 100, 100);
+G2L["35"]["Text"] = [[^]];
+G2L["35"]["Position"] = UDim2.new(0.8, 0, 0.15, 0);
+
+-- Minimized Frame Close Button
+G2L["36"] = Instance.new("TextButton", G2L["33"]);
+G2L["36"]["TextSize"] = 14;
+G2L["36"]["TextColor3"] = Color3.fromRGB(255, 255, 255);
+G2L["36"]["BackgroundColor3"] = Color3.fromRGB(40, 40, 40);
+G2L["36"]["FontFace"] = Font.new([[rbxasset://fonts/families/SourceSansPro.json]], Enum.FontWeight.Bold, Enum.FontStyle.Normal);
+G2L["36"]["Size"] = UDim2.new(0, 20, 0, 20);
+G2L["36"]["Name"] = [[MinimizedClose]];
+G2L["36"]["BorderColor3"] = Color3.fromRGB(100, 100, 100);
+G2L["36"]["Text"] = [[X]];
+G2L["36"]["Position"] = UDim2.new(0.9, 0, 0.15, 0);
+
+-- Function to minimize the UI
+local function minimizeUI()
+    _G.IsMinimized = true
+    G2L["2"].Visible = false
+    G2L["33"].Visible = true
 end
 
--- Enhanced hooking system
-local function hookRemote(remote)
-    if _G.ActiveHooks[remote] then return end
-    
-    local isSystem = isSystemRemote(remote)
-    _G.ActiveHooks[remote] = true
-    
-    if remote:IsA("RemoteEvent") then
-        local oldFireServer = remote.FireServer
-        remote.FireServer = function(self, ...)
-            local args = {...}
-            logRemoteCall(remote, args, "FireServer", isSystem)
-            return oldFireServer(self, ...)
-        end
-        
-        remote.OnClientEvent:Connect(function(...)
-            local args = {...}
-            logRemoteCall(remote, args, "OnClientEvent", isSystem)
-        end)
-        
-    elseif remote:IsA("RemoteFunction") then
-        local oldInvokeServer = remote.InvokeServer
-        remote.InvokeServer = function(self, ...)
-            local args = {...}
-            logRemoteCall(remote, args, "InvokeServer", isSystem)
-            return oldInvokeServer(self, ...)
-        end
-        
-        local oldOnClientInvoke = remote.OnClientInvoke
-        remote.OnClientInvoke = function(...)
-            local args = {...}
-            logRemoteCall(remote, args, "OnClientInvoke", isSystem)
-            if oldOnClientInvoke then
-                return oldOnClientInvoke(...)
-            end
-        end
-    end
+-- Function to restore the UI
+local function restoreUI()
+    _G.IsMinimized = false
+    G2L["2"].Visible = true
+    G2L["33"].Visible = false
 end
 
--- Enhanced logging function
-local function logRemoteCall(remote, args, callType, isSystem)
-    local timestamp = os.date("%H:%M:%S")
-    local remoteInfo = {
-        Remote = remote,
-        Args = args,
-        CallType = callType,
-        Timestamp = timestamp,
-        IsSystem = isSystem
-    }
-    
-    table.insert(_G.RemoteLogs, remoteInfo)
-    
-    if isSystem then
-        _G.SystemRemotes[remote] = remoteInfo
-        addSystemRemoteToList(remote, callType, timestamp)
+-- Function to toggle UI visibility
+local function toggleUIVisibility()
+    _G.IsUIVisible = not _G.IsUIVisible
+    if _G.IsMinimized then
+        G2L["33"].Visible = _G.IsUIVisible
     else
-        addInteractiveRemoteToList(remote, callType, timestamp)
+        G2L["2"].Visible = _G.IsUIVisible
     end
-    
-    updateCounter()
+    G2L["32"].Text = _G.IsUIVisible and "Hide UI" or "Show UI"
 end
 
--- Function to add interactive remote to list
-local function addInteractiveRemoteToList(remote, callType, timestamp)
-    local template = G2L["28"]:Clone()
-    template.Text = string.format("%s (%s) - %s", remote.Name, callType, timestamp)
-    template.Visible = true
-    template.Parent = G2L["18"]
-    
-    template.MouseButton1Click:Connect(function()
-        displayRemoteCode(remote, callType)
+-- Function to close the UI completely
+local function closeUI()
+    G2L["1"]:Destroy()
+end
+
+-- Connect button events
+G2L["30"].MouseButton1Click:Connect(minimizeUI)
+G2L["35"].MouseButton1Click:Connect(restoreUI)
+G2L["31"].MouseButton1Click:Connect(closeUI)
+G2L["36"].MouseButton1Click:Connect(closeUI)
+G2L["32"].MouseButton1Click:Connect(toggleUIVisibility)
+
+-- Add hover effects for buttons
+local function setupButtonHover(button)
+    button.MouseEnter:Connect(function()
+        button.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
     end)
     
-    -- Auto-scroll
-    G2L["18"].CanvasSize = UDim2.new(0, 0, 0, #G2L["18"]:GetChildren() * 25)
-end
-
--- Function to add system remote to list
-local function addSystemRemoteToList(remote, callType, timestamp)
-    local template = G2L["29"]:Clone()
-    template.Text = string.format("[SYS] %s (%s) - %s", remote.Name, callType, timestamp)
-    template.Visible = true
-    template.Parent = G2L["19"]
-    
-    template.MouseButton1Click:Connect(function()
-        displayRemoteCode(remote, callType)
+    button.MouseLeave:Connect(function()
+        button.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
     end)
-    
-    G2L["19"].CanvasSize = UDim2.new(0, 0, 0, #G2L["19"]:GetChildren() * 25)
 end
 
--- Function to display remote code
-local function displayRemoteCode(remote, callType)
-    local path = getPathToInstance(remote)
-    local argsString = ""
-    
-    if _G.RemoteLogs[#_G.RemoteLogs] then
-        local lastCall = _G.RemoteLogs[#_G.RemoteLogs]
-        if lastCall.Remote == remote then
-            local formattedArgs = Format(lastCall.Args)
-            argsString = table.concat(formattedArgs, ",\n    ")
-        end
-    end
-    
-    local codeTemplate = ""
-    if callType == "FireServer" then
-        codeTemplate = string.format("-- %s FireServer Call\nlocal args = {\n    %s\n}\n%s:FireServer(unpack(args))", 
-            remote.Name, argsString, path)
-    elseif callType == "InvokeServer" then
-        codeTemplate = string.format("-- %s InvokeServer Call\nlocal args = {\n    %s\n}\nlocal result = %s:InvokeServer(unpack(args))", 
-            remote.Name, argsString, path)
-    elseif callType == "OnClientEvent" then
-        codeTemplate = string.format("-- %s OnClientEvent Handler\n%s.OnClientEvent:Connect(function(%s)\n    -- Handle event\nend)", 
-            remote.Name, path, argsString ~= "" and "..." or "")
-    end
-    
-    G2L["22"].Text = codeTemplate
-    _G.Code = codeTemplate
-end
+-- Apply hover effects to control buttons
+setupButtonHover(G2L["30"])
+setupButtonHover(G2L["31"])
+setupButtonHover(G2L["32"])
+setupButtonHover(G2L["35"])
+setupButtonHover(G2L["36"])
 
--- Function to update counter
-local function updateCounter()
-    local interactiveCount = #G2L["18"]:GetChildren() - 1
-    local systemCount = #G2L["19"]:GetChildren() - 1
-    G2L["27"].Text = string.format("Int: %d | Sys: %d", interactiveCount, systemCount)
-end
+-- [Previous functions remain the same - getPathToInstance, formatValue, Format, isSystemRemote, hookRemote, logRemoteCall, addInteractiveRemoteToList, addSystemRemoteToList, displayRemoteCode, updateCounter, tab switching, button functionalities, initializeHooking, showAllRemotes]
 
 -- Tab switching functionality
 G2L["15"].MouseButton1Click:Connect(function()
@@ -467,31 +473,8 @@ local function initializeHooking()
     end
 end
 
--- Function to show all remotes combined
-local function showAllRemotes()
-    for _, child in pairs(G2L["20"]:GetChildren()) do
-        if child:IsA("TextButton") then
-            child:Destroy()
-        end
-    end
-    
-    for _, log in pairs(_G.RemoteLogs) do
-        local template = G2L["28"]:Clone()
-        local prefix = log.IsSystem and "[SYS] " or "[INT] "
-        template.Text = prefix .. string.format("%s (%s) - %s", log.Remote.Name, log.CallType, log.Timestamp)
-        template.Visible = true
-        template.Parent = G2L["20"]
-        
-        template.MouseButton1Click:Connect(function()
-            displayRemoteCode(log.Remote, log.CallType)
-        end)
-    end
-    
-    G2L["20"].CanvasSize = UDim2.new(0, 0, 0, #G2L["20"]:GetChildren() * 25)
-end
-
 -- Start the spy
 initializeHooking()
-print("Advanced Remote Spy Loaded - System & Interactive Tracking Active")
+print("Advanced Remote Spy Loaded - Minimize/Toggle Features Added")
 
 return G2L["1"]
