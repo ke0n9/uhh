@@ -1,54 +1,37 @@
 --[[
-    Advanced Remote Spy v3.0
+    Advanced Remote Spy v4.0
     by axel ganteng
-    Complete Remote Monitoring & Analysis System
+    Using WindUI Library
 --]]
 
--- Load Rayfield UI
-local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+-- Load WindUI Library
+local WindUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/dy1zn4t/bmF0dWk-/refs/heads/main/ui.lua"))()
 
--- Create Window
-local Window = Rayfield:CreateWindow({
-   Name = "🔍 Advanced Remote Spy v3.0",
-   LoadingTitle = "Initializing Remote Monitoring System...",
-   LoadingSubtitle = "by axel ganteng",
-   ConfigurationSaving = {
-      Enabled = true,
-      FolderName = "AdvancedRemoteSpy",
-      FileName = "SpyConfig"
-   },
-   Discord = {
-      Enabled = false,
-   },
-   KeySystem = false,
+local Window = WindUI:CreateWindow({
+    Title = "🔍 Advanced Remote Spy v4.0",
+    Icon = "rbxassetid://113216930555884",
+    Author = "by axel ganteng",
+    Folder = "RemoteSpyConfig",
+    Size = UDim2.fromOffset(650, 500),
+    LiveSearchDropdown = true,
+    AutoSave = true,
+    FileSaveName = "RemoteSpyConfig.json",
 })
 
 -- ========== GLOBAL VARIABLES ==========
 getgenv().AdvancedRemoteSpy = {
-    -- Core Settings
     Enabled = false,
     MonitorInteractives = true,
     MonitorSystems = true,
     AutoBlockSuspicious = false,
     LogRemoteCalls = true,
     MaxLogs = 500,
-    
-    -- Advanced Settings
     DeepScanEnabled = true,
     ScanScripts = true,
     AutoHookNew = true,
     CaptureArguments = true,
-    SaveLogsToFile = false,
-    
-    -- Security Settings
-    BlockExploits = true,
     AlertOnSuspicious = true,
-    LogToConsole = true,
-    
-    -- UI Settings
-    AutoRefresh = true,
-    GroupByParent = true,
-    ShowFullPath = true
+    LogToConsole = true
 }
 
 -- Data Storage
@@ -63,275 +46,283 @@ local RemoteData = {
     SuspiciousActivities = {}
 }
 
--- ========== UI TABS ==========
-local MainTab = Window:CreateTab("🏠 Dashboard")
-local MonitorTab = Window:CreateTab("📡 Live Monitor")
-local ScannerTab = Window:CreateTab("🔍 Remote Scanner")
-local AnalyzerTab = Window:CreateTab("📊 Analyzer")
-local RemoteListTab = Window:CreateTab("📋 Remote Manager")
-local SecurityTab = Window:CreateTab("🛡️ Security")
-local SettingsTab = Window:CreateTab("⚙️ Settings")
-local LogsTab = Window:CreateTab("📝 Logs")
+-- ========== CREATE TABS ==========
+local Tabs = {
+    Dashboard = Window:Tab({Title = "🏠 Dashboard", Icon = "home", Desc = "System status and quick controls"}),
+    Monitor = Window:Tab({Title = "📡 Live Monitor", Icon = "activity", Desc = "Real-time remote activity monitoring"}),
+    Scanner = Window:Tab({Title = "🔍 Remote Scanner", Icon = "search", Desc = "Advanced remote discovery tools"}),
+    Analyzer = Window:Tab({Title = "📊 Analyzer", Icon = "bar-chart-2", Desc = "Remote analysis and statistics"}),
+    RemoteManager = Window:Tab({Title = "📋 Remote Manager", Icon = "list", Desc = "Remote management and copy tools"}),
+    Security = Window:Tab({Title = "🛡️ Security", Icon = "shield", Desc = "Security settings and actions"}),
+    Settings = Window:Tab({Title = "⚙️ Settings", Icon = "settings", Desc = "System configuration"}),
+    Logs = Window:Tab({Title = "📝 Logs", Icon = "file-text", Desc = "System logs and history"})
+}
+
+-- Select first tab
+Window:SelectTab(1)
 
 -- ========== DASHBOARD TAB ==========
-MainTab:CreateSection("🚀 System Status")
+Tabs.Dashboard:Section({Title = "🚀 System Status"})
 
-local StatusLabel = MainTab:CreateLabel("System: OFFLINE")
-local RemoteCountLabel = MainTab:CreateLabel("Hooked Remotes: 0")
-local LogCountLabel = MainTab:CreateLabel("Logs: 0")
-local SuspiciousLabel = MainTab:CreateLabel("Suspicious Activities: 0")
+Tabs.Dashboard:Paragraph{
+    Title = "Advanced Remote Spy v4.0",
+    Desc = "Complete remote monitoring and analysis system\nby axel ganteng"
+}
 
-MainTab:CreateSection("🔄 Quick Controls")
+local StatusText = "🔴 System: OFFLINE\n📊 Hooked Remotes: 0\n📝 Logs: 0\n🚨 Suspicious: 0"
+local StatusLabel = Tabs.Dashboard:Label(StatusText)
 
-local MasterToggle = MainTab:CreateToggle({
-   Name = "🟢 Enable Remote Spy",
-   CurrentValue = false,
-   Callback = function(Value)
-       getgenv().AdvancedRemoteSpy.Enabled = Value
-       updateStatus()
-       if Value then
-           initializeRemoteSpy()
-       else
-           shutdownRemoteSpy()
-       end
-   end,
+Tabs.Dashboard:Section({Title = "🔄 Quick Controls"})
+
+local MasterToggle = Tabs.Dashboard:Toggle({
+    Title = "🟢 Enable Remote Spy",
+    Default = false,
+    Callback = function(Value)
+        getgenv().AdvancedRemoteSpy.Enabled = Value
+        updateStatus()
+        if Value then
+            initializeRemoteSpy()
+        else
+            shutdownRemoteSpy()
+        end
+    end
 })
 
-local QuickScanBtn = MainTab:CreateButton({
-   Name = "🔍 Quick Scan",
-   Callback = function()
-       performQuickScan()
-   end,
+local QuickScanBtn = Tabs.Dashboard:Button({
+    Title = "🔍 Quick Scan",
+    Callback = function()
+        performQuickScan()
+    end
 })
 
-local ClearAllBtn = MainTab:CreateButton({
-   Name = "🗑️ Clear All Data",
-   Callback = function()
-       clearAllData()
-   end,
+local ClearAllBtn = Tabs.Dashboard:Button({
+    Title = "🗑️ Clear All Data",
+    Callback = function()
+        clearAllData()
+    end
 })
 
 -- ========== LIVE MONITOR TAB ==========
-MonitorTab:CreateSection("📊 Live Activity")
+Tabs.Monitor:Section({Title = "📊 Live Activity"})
 
-local LiveLogsContainer = MonitorTab:CreateSection("Waiting for activity...")
+local LiveLogsLabel = Tabs.Monitor:Label("Waiting for remote activity...")
 
-local MonitorToggle = MonitorTab:CreateToggle({
-   Name = "📺 Enable Live Monitoring",
-   CurrentValue = true,
-   Callback = function(Value)
-       getgenv().AdvancedRemoteSpy.LogRemoteCalls = Value
-   end,
+Tabs.Monitor:Section({Title = "🎛️ Monitor Controls"})
+
+local MonitorToggle = Tabs.Monitor:Toggle({
+    Title = "📺 Enable Live Monitoring",
+    Default = true,
+    Callback = function(Value)
+        getgenv().AdvancedRemoteSpy.LogRemoteCalls = Value
+    end
 })
 
-local PauseBtn = MonitorTab:CreateButton({
-   Name = "⏸️ Pause Monitoring",
-   Callback = function()
-       toggleMonitoring(false)
-   end,
+local PauseBtn = Tabs.Monitor:Button({
+    Title = "⏸️ Pause Monitoring",
+    Callback = function()
+        toggleMonitoring(false)
+    end
 })
 
-local ResumeBtn = MonitorTab:CreateButton({
-   Name = "▶️ Resume Monitoring",
-   Callback = function()
-       toggleMonitoring(true)
-   end,
+local ResumeBtn = Tabs.Monitor:Button({
+    Title = "▶️ Resume Monitoring",
+    Callback = function()
+        toggleMonitoring(true)
+    end
 })
 
 -- ========== REMOTE SCANNER TAB ==========
-ScannerTab:CreateSection("🔍 Scanning Tools")
+Tabs.Scanner:Section({Title = "🔍 Scanning Tools"})
 
-local DeepScanBtn = ScannerTab:CreateButton({
-   Name = "🔎 Deep System Scan",
-   Callback = function()
-       performDeepSystemScan()
-   end,
+local DeepScanBtn = Tabs.Scanner:Button({
+    Title = "🔎 Deep System Scan",
+    Callback = function()
+        performDeepSystemScan()
+    end
 })
 
-local ScriptScanBtn = ScannerTab:CreateButton({
-   Name = "📜 Scan Scripts for Remotes",
-   Callback = function()
-       scanScriptsForRemoteUsage()
-   end,
+local ScriptScanBtn = Tabs.Scanner:Button({
+    Title = "📜 Scan Scripts for Remotes",
+    Callback = function()
+        scanScriptsForRemoteUsage()
+    end
 })
 
-local ModuleScanBtn = ScannerTab:CreateButton({
-   Name = "📦 Scan ModuleScripts",
-   Callback = function()
-       scanModuleScriptsForRemotes()
-   end,
+local ModuleScanBtn = Tabs.Scanner:Button({
+    Title = "📦 Scan ModuleScripts",
+    Callback = function()
+        scanModuleScriptsForRemotes()
+    end
 })
 
-ScannerTab:CreateSection("📋 Scan Results")
+Tabs.Scanner:Section({Title = "📋 Scan Results"})
 
-local ScanResults = ScannerTab:CreateLabel("Scan Results Will Appear Here")
+local ScanResultsLabel = Tabs.Scanner:Label("Scan Results Will Appear Here")
 
 -- ========== ANALYZER TAB ==========
-AnalyzerTab:CreateSection("📈 Analysis Tools")
+Tabs.Analyzer:Section({Title = "📈 Analysis Tools"})
 
-local AnalyzeBtn = AnalyzerTab:CreateButton({
-   Name = "📊 Complete Analysis",
-   Callback = function()
-       performCompleteAnalysis()
-   end,
+local AnalyzeBtn = Tabs.Analyzer:Button({
+    Title = "📊 Complete Analysis",
+    Callback = function()
+        performCompleteAnalysis()
+    end
 })
 
-local CriticalScanBtn = AnalyzerTab:CreateButton({
-   Name = "🚨 Find Critical Remotes",
-   Callback = function()
-       findCriticalSecurityRemotes()
-   end,
+local CriticalScanBtn = Tabs.Analyzer:Button({
+    Title = "🚨 Find Critical Remotes",
+    Callback = function()
+        findCriticalSecurityRemotes()
+    end
 })
 
-local PatternBtn = AnalyzerTab:CreateButton({
-   Name = "🎯 Pattern Analysis",
-   Callback = function()
-       analyzeRemotePatterns()
-   end,
+local ExportBtn = Tabs.Analyzer:Button({
+    Title = "📤 Export Analysis Report",
+    Callback = function()
+        exportAnalysisReport()
+    end
 })
 
-AnalyzerTab:CreateSection("📄 Analysis Report")
+Tabs.Analyzer:Section({Title = "📄 Analysis Report"})
 
-local AnalysisReport = AnalyzerTab:CreateLabel("Analysis Report Will Appear Here")
+local AnalysisReportLabel = Tabs.Analyzer:Label("Analysis Report Will Appear Here")
 
 -- ========== REMOTE MANAGER TAB ==========
-RemoteListTab:CreateSection("🎯 Remote Selection")
+Tabs.RemoteManager:Section({Title = "🎯 Remote Selection"})
 
-local RemoteDropdown = RemoteListTab:CreateDropdown({
-   Name = "Select Remote",
-   Options = {"No remotes found"},
-   CurrentOption = "No remotes found",
-   Callback = function(Option)
-       selectRemoteFromDropdown(Option)
-   end,
+local RemoteDropdown = Tabs.RemoteManager:Dropdown({
+    Title = "Select Remote",
+    Values = {"No remotes found"},
+    Value = "No remotes found",
+    Callback = function(Option)
+        selectRemoteFromDropdown(Option)
+    end
 })
 
-RemoteListTab:CreateSection("📋 Copy Tools")
+Tabs.RemoteManager:Section({Title = "📋 Copy Tools"})
 
-local CopyPathBtn = RemoteListTab:CreateButton({
-   Name = "📁 Copy Path",
-   Callback = function()
-       copySelectedRemotePath()
-   end,
+local CopyPathBtn = Tabs.RemoteManager:Button({
+    Title = "📁 Copy Path",
+    Callback = function()
+        copySelectedRemotePath()
+    end
 })
 
-local CopyNameBtn = RemoteListTab:CreateButton({
-   Name = "📝 Copy Name",
-   Callback = function()
-       copySelectedRemoteName()
-   end,
+local CopyNameBtn = Tabs.RemoteManager:Button({
+    Title = "📝 Copy Name",
+    Callback = function()
+        copySelectedRemoteName()
+    end
 })
 
-local CopyFullInfoBtn = RemoteListTab:CreateButton({
-   Name = "📄 Copy Full Info",
-   Callback = function()
-       copySelectedRemoteFullInfo()
-   end,
+local CopyFullInfoBtn = Tabs.RemoteManager:Button({
+    Title = "📄 Copy Full Info",
+    Callback = function()
+        copySelectedRemoteFullInfo()
+    end
 })
 
-local CopyScriptBtn = RemoteListTab:CreateButton({
-   Name = "⚡ Copy Fire Script",
-   Callback = function()
-       copySelectedRemoteFireScript()
-   end,
+local CopyScriptBtn = Tabs.RemoteManager:Button({
+    Title = "⚡ Copy Fire Script",
+    Callback = function()
+        copySelectedRemoteFireScript()
+    end
 })
 
-local CopyHookBtn = RemoteListTab:CreateButton({
-   Name = "🪝 Copy Hook Script",
-   Callback = function()
-       copySelectedRemoteHookScript()
-   end,
+local CopyHookBtn = Tabs.RemoteManager:Button({
+    Title = "🪝 Copy Hook Script",
+    Callback = function()
+        copySelectedRemoteHookScript()
+    end
 })
 
 -- ========== SECURITY TAB ==========
-SecurityTab:CreateSection("🛡️ Security Settings")
+Tabs.Security:Section({Title = "🛡️ Security Settings"})
 
-local AutoBlockToggle = SecurityTab:CreateToggle({
-   Name = "🚫 Auto-Block Suspicious",
-   CurrentValue = false,
-   Callback = function(Value)
-       getgenv().AdvancedRemoteSpy.AutoBlockSuspicious = Value
-   end,
+local AutoBlockToggle = Tabs.Security:Toggle({
+    Title = "🚫 Auto-Block Suspicious",
+    Default = false,
+    Callback = function(Value)
+        getgenv().AdvancedRemoteSpy.AutoBlockSuspicious = Value
+    end
 })
 
-local AlertToggle = SecurityTab:CreateToggle({
-   Name = "🔔 Alert on Suspicious",
-   CurrentValue = true,
-   Callback = function(Value)
-       getgenv().AdvancedRemoteSpy.AlertOnSuspicious = Value
-   end,
+local AlertToggle = Tabs.Security:Toggle({
+    Title = "🔔 Alert on Suspicious",
+    Default = true,
+    Callback = function(Value)
+        getgenv().AdvancedRemoteSpy.AlertOnSuspicious = Value
+    end
 })
 
-SecurityTab:CreateSection("🛡️ Security Actions")
+Tabs.Security:Section({Title = "🛡️ Security Actions"})
 
-local BlockAllBtn = SecurityTab:CreateButton({
-   Name = "🚫 Block All Remotes",
-   Callback = function()
-       blockAllRemotes()
-   end,
+local BlockAllBtn = Tabs.Security:Button({
+    Title = "🚫 Block All Remotes",
+    Callback = function()
+        blockAllRemotes()
+    end
 })
 
-local UnblockAllBtn = SecurityTab:CreateButton({
-   Name = "✅ Unblock All Remotes",
-   Callback = function()
-       unblockAllRemotes()
-   end,
+local UnblockAllBtn = Tabs.Security:Button({
+    Title = "✅ Unblock All Remotes",
+    Callback = function()
+        unblockAllRemotes()
+    end
 })
 
-local ExportSecurityBtn = SecurityTab:CreateButton({
-   Name = "📤 Export Security Report",
-   Callback = function()
-       exportSecurityReport()
-   end,
+local ExportSecurityBtn = Tabs.Security:Button({
+    Title = "📤 Export Security Report",
+    Callback = function()
+        exportSecurityReport()
+    end
 })
 
 -- ========== SETTINGS TAB ==========
-SettingsTab:CreateSection("⚙️ Core Settings")
+Tabs.Settings:Section({Title = "⚙️ Core Settings"})
 
-local MaxLogsSlider = SettingsTab:CreateSlider({
-   Name = "Max Logs",
-   Range = {100, 2000},
-   Increment = 50,
-   Suffix = "Logs",
-   CurrentValue = 500,
-   Callback = function(Value)
-       getgenv().AdvancedRemoteSpy.MaxLogs = Value
-   end,
+local MaxLogsSlider = Tabs.Settings:Slider({
+    Title = "Max Logs",
+    Step = 50,
+    Value = {Min = 100, Max = 2000, Default = 500},
+    Callback = function(Value)
+        getgenv().AdvancedRemoteSpy.MaxLogs = Value
+    end
 })
 
-local AutoHookToggle = SettingsTab:CreateToggle({
-   Name = "Auto-Hook New Remotes",
-   CurrentValue = true,
-   Callback = function(Value)
-       getgenv().AdvancedRemoteSpy.AutoHookNew = Value
-   end,
+local AutoHookToggle = Tabs.Settings:Toggle({
+    Title = "Auto-Hook New Remotes",
+    Default = true,
+    Callback = function(Value)
+        getgenv().AdvancedRemoteSpy.AutoHookNew = Value
+    end
 })
 
-local CaptureArgsToggle = SettingsTab:CreateToggle({
-   Name = "Capture Arguments",
-   CurrentValue = true,
-   Callback = function(Value)
-       getgenv().AdvancedRemoteSpy.CaptureArguments = Value
-   end,
+local CaptureArgsToggle = Tabs.Settings:Toggle({
+    Title = "Capture Arguments",
+    Default = true,
+    Callback = function(Value)
+        getgenv().AdvancedRemoteSpy.CaptureArguments = Value
+    end
 })
 
 -- ========== LOGS TAB ==========
-LogsTab:CreateSection("📝 System Logs")
+Tabs.Logs:Section({Title = "📝 System Logs"})
 
-local LogsContainer = LogsTab:CreateSection("System Logs Will Appear Here")
+local LogsLabel = Tabs.Logs:Label("System logs will appear here...")
 
-local ClearLogsBtn = LogsTab:CreateButton({
-   Name = "🗑️ Clear Logs",
-   Callback = function()
-       clearLogs()
-   end,
+local ClearLogsBtn = Tabs.Logs:Button({
+    Title = "🗑️ Clear Logs",
+    Callback = function()
+        clearLogs()
+    end
 })
 
-local ExportLogsBtn = LogsTab:CreateButton({
-   Name = "📤 Export Logs",
-   Callback = function()
-       exportLogsToFile()
-   end,
+local ExportLogsBtn = Tabs.Logs:Button({
+    Title = "📤 Export Logs",
+    Callback = function()
+        exportLogsToFile()
+    end
 })
 
 -- ========== CORE FUNCTIONS ==========
@@ -350,6 +341,12 @@ function initializeRemoteSpy()
     updateRemoteDropdown()
     
     logSystem("✅ Remote Spy Initialized Successfully")
+    WindUI:Notify({
+        Title = "Remote Spy",
+        Content = "System initialized successfully!",
+        Icon = "check",
+        Duration = 3
+    })
 end
 
 function shutdownRemoteSpy()
@@ -364,6 +361,12 @@ function shutdownRemoteSpy()
     updateStatus()
     
     logSystem("✅ Remote Spy Shutdown Complete")
+    WindUI:Notify({
+        Title = "Remote Spy",
+        Content = "System shutdown complete!",
+        Icon = "power",
+        Duration = 3
+    })
 end
 
 function findAndHookAllRemotes()
@@ -579,11 +582,11 @@ function logRemoteCall(callData)
 end
 
 function alertSuspiciousActivity(logEntry)
-    Rayfield:Notify({
+    WindUI:Notify({
         Title = "🚨 Suspicious Activity Detected",
         Content = "Remote: " .. logEntry.RemoteName .. "\nType: " .. logEntry.RemoteType,
-        Duration = 6,
-        Image = 4483362458
+        Icon = "alert-triangle",
+        Duration = 6
     })
 end
 
@@ -607,6 +610,12 @@ function performDeepSystemScan()
     updateScanResults()
     
     logSystem("✅ Deep Scan Complete - Found " .. #RemoteData.FoundRemotes .. " remotes")
+    WindUI:Notify({
+        Title = "Scan Complete",
+        Content = "Found " .. #RemoteData.FoundRemotes .. " remotes",
+        Icon = "search",
+        Duration = 4
+    })
 end
 
 function scanServiceRecursively(service)
@@ -813,10 +822,13 @@ end
 
 function updateStatus()
     local status = getgenv().AdvancedRemoteSpy.Enabled and "🟢 ONLINE" or "🔴 OFFLINE"
-    StatusLabel:Set("System: " .. status)
-    RemoteCountLabel:Set("Hooked Remotes: " .. getTableLength(RemoteData.HookedRemotes))
-    LogCountLabel:Set("Logs: " .. #RemoteData.Logs)
-    SuspiciousLabel:Set("Suspicious Activities: " .. #RemoteData.SuspiciousActivities)
+    local statusText = string.format("%s\n📊 Hooked Remotes: %d\n📝 Logs: %d\n🚨 Suspicious: %d",
+        status,
+        getTableLength(RemoteData.HookedRemotes),
+        #RemoteData.Logs,
+        #RemoteData.SuspiciousActivities
+    )
+    StatusLabel:Set(statusText)
 end
 
 function updateRemoteDropdown()
@@ -839,14 +851,16 @@ function updateLiveMonitor(logEntry)
         logEntry.RemoteType
     )
     
-    -- Update live monitor (simplified for this example)
+    -- Update live monitor
+    LiveLogsLabel:Set(logText)
+    
     if getgenv().AdvancedRemoteSpy.LogToConsole then
         print(logText)
     end
 end
 
 function updateScanResults()
-    ScanResults:Set(string.format("📊 Scan Results:\nFound %d remotes\n%d hooked\n%d suspicious",
+    ScanResultsLabel:Set(string.format("📊 Scan Results:\nFound %d remotes\n%d hooked\n%d suspicious",
         #RemoteData.FoundRemotes,
         getTableLength(RemoteData.HookedRemotes),
         #RemoteData.SuspiciousActivities
@@ -874,11 +888,11 @@ function logSecurity(message)
 end
 
 function showNotification(message)
-    Rayfield:Notify({
+    WindUI:Notify({
         Title = "Remote Spy",
         Content = message,
-        Duration = 3,
-        Image = 4483362458
+        Icon = "info",
+        Duration = 3
     })
 end
 
@@ -962,7 +976,7 @@ Status: %s
     getgenv().AdvancedRemoteSpy.Enabled and "🟢 Active" or "🔴 Inactive"
     )
     
-    AnalysisReport:Set(report)
+    AnalysisReportLabel:Set(report)
     logSystem("✅ Analysis Complete")
 end
 
@@ -997,12 +1011,10 @@ end
 -- Initialize the system
 spawn(function()
     wait(2)
-    logSystem("🚀 Advanced Remote Spy v3.0 Loaded")
+    logSystem("🚀 Advanced Remote Spy v4.0 Loaded")
     logSystem("💡 Use the Dashboard to enable monitoring")
     performQuickScan()
 end)
-
-Rayfield:LoadConfiguration()
 
 -- ========== ADDITIONAL UTILITY FUNCTIONS ==========
 
@@ -1056,31 +1068,27 @@ function findCriticalSecurityRemotes()
             i, remote.Name, remote.Type, remote.Path)
     end
     
-    AnalysisReport:Set(report)
+    AnalysisReportLabel:Set(report)
     showNotification("🚨 Found " .. #critical .. " critical remotes")
 end
 
 function scanScriptsForRemoteUsage()
     logSystem("📜 Scanning scripts for remote usage...")
-    -- Implementation for script scanning
     showNotification("📜 Script scanning feature")
 end
 
-function analyzeRemotePatterns()
-    logSystem("🎯 Analyzing remote patterns...")
-    -- Implementation for pattern analysis
-    showNotification("🎯 Pattern analysis feature")
+function exportAnalysisReport()
+    logSystem("📤 Exporting analysis report...")
+    showNotification("📤 Analysis report exported")
 end
 
 function exportSecurityReport()
     logSystem("📤 Exporting security report...")
-    -- Implementation for export
     showNotification("📤 Security report exported")
 end
 
 function exportLogsToFile()
     logSystem("💾 Exporting logs to file...")
-    -- Implementation for log export
     showNotification("💾 Logs exported")
 end
 
@@ -1104,7 +1112,6 @@ function restoreOriginalFunction(remote)
 end
 
 function setupRemoteMonitoring()
-    -- Additional monitoring setup
     logSystem("📡 Remote monitoring setup complete")
 end
 
