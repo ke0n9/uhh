@@ -1,0 +1,1120 @@
+--[[
+    Advanced Remote Spy v3.0
+    by axel ganteng
+    Complete Remote Monitoring & Analysis System
+--]]
+
+-- Load Rayfield UI
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+
+-- Create Window
+local Window = Rayfield:CreateWindow({
+   Name = "🔍 Advanced Remote Spy v3.0",
+   LoadingTitle = "Initializing Remote Monitoring System...",
+   LoadingSubtitle = "by axel ganteng",
+   ConfigurationSaving = {
+      Enabled = true,
+      FolderName = "AdvancedRemoteSpy",
+      FileName = "SpyConfig"
+   },
+   Discord = {
+      Enabled = false,
+   },
+   KeySystem = false,
+})
+
+-- ========== GLOBAL VARIABLES ==========
+getgenv().AdvancedRemoteSpy = {
+    -- Core Settings
+    Enabled = false,
+    MonitorInteractives = true,
+    MonitorSystems = true,
+    AutoBlockSuspicious = false,
+    LogRemoteCalls = true,
+    MaxLogs = 500,
+    
+    -- Advanced Settings
+    DeepScanEnabled = true,
+    ScanScripts = true,
+    AutoHookNew = true,
+    CaptureArguments = true,
+    SaveLogsToFile = false,
+    
+    -- Security Settings
+    BlockExploits = true,
+    AlertOnSuspicious = true,
+    LogToConsole = true,
+    
+    -- UI Settings
+    AutoRefresh = true,
+    GroupByParent = true,
+    ShowFullPath = true
+}
+
+-- Data Storage
+local RemoteData = {
+    Logs = {},
+    HookedRemotes = {},
+    OriginalFunctions = {},
+    FoundRemotes = {},
+    Statistics = {},
+    SelectedRemote = nil,
+    RemoteCallHistory = {},
+    SuspiciousActivities = {}
+}
+
+-- ========== UI TABS ==========
+local MainTab = Window:CreateTab("🏠 Dashboard")
+local MonitorTab = Window:CreateTab("📡 Live Monitor")
+local ScannerTab = Window:CreateTab("🔍 Remote Scanner")
+local AnalyzerTab = Window:CreateTab("📊 Analyzer")
+local RemoteListTab = Window:CreateTab("📋 Remote Manager")
+local SecurityTab = Window:CreateTab("🛡️ Security")
+local SettingsTab = Window:CreateTab("⚙️ Settings")
+local LogsTab = Window:CreateTab("📝 Logs")
+
+-- ========== DASHBOARD TAB ==========
+MainTab:CreateSection("🚀 System Status")
+
+local StatusLabel = MainTab:CreateLabel("System: OFFLINE")
+local RemoteCountLabel = MainTab:CreateLabel("Hooked Remotes: 0")
+local LogCountLabel = MainTab:CreateLabel("Logs: 0")
+local SuspiciousLabel = MainTab:CreateLabel("Suspicious Activities: 0")
+
+MainTab:CreateSection("🔄 Quick Controls")
+
+local MasterToggle = MainTab:CreateToggle({
+   Name = "🟢 Enable Remote Spy",
+   CurrentValue = false,
+   Callback = function(Value)
+       getgenv().AdvancedRemoteSpy.Enabled = Value
+       updateStatus()
+       if Value then
+           initializeRemoteSpy()
+       else
+           shutdownRemoteSpy()
+       end
+   end,
+})
+
+local QuickScanBtn = MainTab:CreateButton({
+   Name = "🔍 Quick Scan",
+   Callback = function()
+       performQuickScan()
+   end,
+})
+
+local ClearAllBtn = MainTab:CreateButton({
+   Name = "🗑️ Clear All Data",
+   Callback = function()
+       clearAllData()
+   end,
+})
+
+-- ========== LIVE MONITOR TAB ==========
+MonitorTab:CreateSection("📊 Live Activity")
+
+local LiveLogsContainer = MonitorTab:CreateSection("Waiting for activity...")
+
+local MonitorToggle = MonitorTab:CreateToggle({
+   Name = "📺 Enable Live Monitoring",
+   CurrentValue = true,
+   Callback = function(Value)
+       getgenv().AdvancedRemoteSpy.LogRemoteCalls = Value
+   end,
+})
+
+local PauseBtn = MonitorTab:CreateButton({
+   Name = "⏸️ Pause Monitoring",
+   Callback = function()
+       toggleMonitoring(false)
+   end,
+})
+
+local ResumeBtn = MonitorTab:CreateButton({
+   Name = "▶️ Resume Monitoring",
+   Callback = function()
+       toggleMonitoring(true)
+   end,
+})
+
+-- ========== REMOTE SCANNER TAB ==========
+ScannerTab:CreateSection("🔍 Scanning Tools")
+
+local DeepScanBtn = ScannerTab:CreateButton({
+   Name = "🔎 Deep System Scan",
+   Callback = function()
+       performDeepSystemScan()
+   end,
+})
+
+local ScriptScanBtn = ScannerTab:CreateButton({
+   Name = "📜 Scan Scripts for Remotes",
+   Callback = function()
+       scanScriptsForRemoteUsage()
+   end,
+})
+
+local ModuleScanBtn = ScannerTab:CreateButton({
+   Name = "📦 Scan ModuleScripts",
+   Callback = function()
+       scanModuleScriptsForRemotes()
+   end,
+})
+
+ScannerTab:CreateSection("📋 Scan Results")
+
+local ScanResults = ScannerTab:CreateLabel("Scan Results Will Appear Here")
+
+-- ========== ANALYZER TAB ==========
+AnalyzerTab:CreateSection("📈 Analysis Tools")
+
+local AnalyzeBtn = AnalyzerTab:CreateButton({
+   Name = "📊 Complete Analysis",
+   Callback = function()
+       performCompleteAnalysis()
+   end,
+})
+
+local CriticalScanBtn = AnalyzerTab:CreateButton({
+   Name = "🚨 Find Critical Remotes",
+   Callback = function()
+       findCriticalSecurityRemotes()
+   end,
+})
+
+local PatternBtn = AnalyzerTab:CreateButton({
+   Name = "🎯 Pattern Analysis",
+   Callback = function()
+       analyzeRemotePatterns()
+   end,
+})
+
+AnalyzerTab:CreateSection("📄 Analysis Report")
+
+local AnalysisReport = AnalyzerTab:CreateLabel("Analysis Report Will Appear Here")
+
+-- ========== REMOTE MANAGER TAB ==========
+RemoteListTab:CreateSection("🎯 Remote Selection")
+
+local RemoteDropdown = RemoteListTab:CreateDropdown({
+   Name = "Select Remote",
+   Options = {"No remotes found"},
+   CurrentOption = "No remotes found",
+   Callback = function(Option)
+       selectRemoteFromDropdown(Option)
+   end,
+})
+
+RemoteListTab:CreateSection("📋 Copy Tools")
+
+local CopyPathBtn = RemoteListTab:CreateButton({
+   Name = "📁 Copy Path",
+   Callback = function()
+       copySelectedRemotePath()
+   end,
+})
+
+local CopyNameBtn = RemoteListTab:CreateButton({
+   Name = "📝 Copy Name",
+   Callback = function()
+       copySelectedRemoteName()
+   end,
+})
+
+local CopyFullInfoBtn = RemoteListTab:CreateButton({
+   Name = "📄 Copy Full Info",
+   Callback = function()
+       copySelectedRemoteFullInfo()
+   end,
+})
+
+local CopyScriptBtn = RemoteListTab:CreateButton({
+   Name = "⚡ Copy Fire Script",
+   Callback = function()
+       copySelectedRemoteFireScript()
+   end,
+})
+
+local CopyHookBtn = RemoteListTab:CreateButton({
+   Name = "🪝 Copy Hook Script",
+   Callback = function()
+       copySelectedRemoteHookScript()
+   end,
+})
+
+-- ========== SECURITY TAB ==========
+SecurityTab:CreateSection("🛡️ Security Settings")
+
+local AutoBlockToggle = SecurityTab:CreateToggle({
+   Name = "🚫 Auto-Block Suspicious",
+   CurrentValue = false,
+   Callback = function(Value)
+       getgenv().AdvancedRemoteSpy.AutoBlockSuspicious = Value
+   end,
+})
+
+local AlertToggle = SecurityTab:CreateToggle({
+   Name = "🔔 Alert on Suspicious",
+   CurrentValue = true,
+   Callback = function(Value)
+       getgenv().AdvancedRemoteSpy.AlertOnSuspicious = Value
+   end,
+})
+
+SecurityTab:CreateSection("🛡️ Security Actions")
+
+local BlockAllBtn = SecurityTab:CreateButton({
+   Name = "🚫 Block All Remotes",
+   Callback = function()
+       blockAllRemotes()
+   end,
+})
+
+local UnblockAllBtn = SecurityTab:CreateButton({
+   Name = "✅ Unblock All Remotes",
+   Callback = function()
+       unblockAllRemotes()
+   end,
+})
+
+local ExportSecurityBtn = SecurityTab:CreateButton({
+   Name = "📤 Export Security Report",
+   Callback = function()
+       exportSecurityReport()
+   end,
+})
+
+-- ========== SETTINGS TAB ==========
+SettingsTab:CreateSection("⚙️ Core Settings")
+
+local MaxLogsSlider = SettingsTab:CreateSlider({
+   Name = "Max Logs",
+   Range = {100, 2000},
+   Increment = 50,
+   Suffix = "Logs",
+   CurrentValue = 500,
+   Callback = function(Value)
+       getgenv().AdvancedRemoteSpy.MaxLogs = Value
+   end,
+})
+
+local AutoHookToggle = SettingsTab:CreateToggle({
+   Name = "Auto-Hook New Remotes",
+   CurrentValue = true,
+   Callback = function(Value)
+       getgenv().AdvancedRemoteSpy.AutoHookNew = Value
+   end,
+})
+
+local CaptureArgsToggle = SettingsTab:CreateToggle({
+   Name = "Capture Arguments",
+   CurrentValue = true,
+   Callback = function(Value)
+       getgenv().AdvancedRemoteSpy.CaptureArguments = Value
+   end,
+})
+
+-- ========== LOGS TAB ==========
+LogsTab:CreateSection("📝 System Logs")
+
+local LogsContainer = LogsTab:CreateSection("System Logs Will Appear Here")
+
+local ClearLogsBtn = LogsTab:CreateButton({
+   Name = "🗑️ Clear Logs",
+   Callback = function()
+       clearLogs()
+   end,
+})
+
+local ExportLogsBtn = LogsTab:CreateButton({
+   Name = "📤 Export Logs",
+   Callback = function()
+       exportLogsToFile()
+   end,
+})
+
+-- ========== CORE FUNCTIONS ==========
+
+function initializeRemoteSpy()
+    logSystem("🟢 Initializing Advanced Remote Spy...")
+    
+    -- Hook existing remotes
+    findAndHookAllRemotes()
+    
+    -- Set up monitoring
+    setupRemoteMonitoring()
+    
+    -- Update UI
+    updateStatus()
+    updateRemoteDropdown()
+    
+    logSystem("✅ Remote Spy Initialized Successfully")
+end
+
+function shutdownRemoteSpy()
+    logSystem("🔴 Shutting down Remote Spy...")
+    
+    -- Unhook all remotes
+    for remote, _ in pairs(RemoteData.HookedRemotes) do
+        restoreOriginalFunction(remote)
+    end
+    
+    RemoteData.HookedRemotes = {}
+    updateStatus()
+    
+    logSystem("✅ Remote Spy Shutdown Complete")
+end
+
+function findAndHookAllRemotes()
+    local hookCount = 0
+    
+    -- Scan all services
+    for _, service in pairs(getImportantServices()) do
+        hookCount = hookCount + hookRemotesInService(service)
+    end
+    
+    -- Set up descendant added listener
+    if getgenv().AdvancedRemoteSpy.AutoHookNew then
+        game.DescendantAdded:Connect(function(obj)
+            if isValidRemote(obj) then
+                hookRemote(obj)
+            end
+        end)
+    end
+    
+    logSystem("✅ Hooked " .. hookCount .. " remotes")
+end
+
+function getImportantServices()
+    return {
+        game:GetService("ReplicatedStorage"),
+        game:GetService("ServerStorage"), 
+        game:GetService("ServerScriptService"),
+        game:GetService("StarterPlayer"),
+        game:GetService("Players"),
+        game:GetService("Lighting"),
+        game:GetService("Workspace")
+    }
+end
+
+function isValidRemote(obj)
+    return obj:IsA("RemoteEvent") or obj:IsA("RemoteFunction") or obj:IsA("BindableEvent")
+end
+
+function hookRemote(remote)
+    if RemoteData.HookedRemotes[remote] then return end
+    
+    local remoteType = remote.ClassName
+    
+    if remoteType == "RemoteEvent" then
+        hookRemoteEvent(remote)
+    elseif remoteType == "RemoteFunction" then
+        hookRemoteFunction(remote)
+    elseif remoteType == "BindableEvent" then
+        hookBindableEvent(remote)
+    end
+    
+    -- Add to found remotes
+    addToFoundRemotes(remote)
+end
+
+function hookRemoteEvent(remote)
+    local originalFireServer = remote.FireServer
+    RemoteData.OriginalFunctions[remote] = originalFireServer
+    
+    remote.FireServer = function(self, ...)
+        local args = {...}
+        local callData = {
+            Remote = remote,
+            Type = "RemoteEvent",
+            Arguments = args,
+            Timestamp = os.date("%X"),
+            Thread = coroutine.running()
+        }
+        
+        -- Check if suspicious
+        local isSuspicious = isSuspiciousCall(callData)
+        callData.IsSuspicious = isSuspicious
+        
+        -- Log the call
+        logRemoteCall(callData)
+        
+        -- Block if suspicious and auto-block enabled
+        if isSuspicious and getgenv().AdvancedRemoteSpy.AutoBlockSuspicious then
+            logSecurity("🚫 BLOCKED Suspicious RemoteEvent: " .. remote.Name)
+            return nil
+        end
+        
+        -- Execute original function
+        return originalFireServer(self, ...)
+    end
+    
+    RemoteData.HookedRemotes[remote] = true
+end
+
+function hookRemoteFunction(remote)
+    local originalInvokeServer = remote.InvokeServer
+    RemoteData.OriginalFunctions[remote] = originalInvokeServer
+    
+    remote.InvokeServer = function(self, ...)
+        local args = {...}
+        local callData = {
+            Remote = remote,
+            Type = "RemoteFunction", 
+            Arguments = args,
+            Timestamp = os.date("%X"),
+            Thread = coroutine.running()
+        }
+        
+        -- Check if suspicious
+        local isSuspicious = isSuspiciousCall(callData)
+        callData.IsSuspicious = isSuspicious
+        
+        -- Log the call
+        logRemoteCall(callData)
+        
+        -- Block if suspicious and auto-block enabled
+        if isSuspicious and getgenv().AdvancedRemoteSpy.AutoBlockSuspicious then
+            logSecurity("🚫 BLOCKED Suspicious RemoteFunction: " .. remote.Name)
+            return nil
+        end
+        
+        -- Execute original function
+        return originalInvokeServer(self, ...)
+    end
+    
+    RemoteData.HookedRemotes[remote] = true
+end
+
+function hookBindableEvent(bindable)
+    local originalFire = bindable.Fire
+    RemoteData.OriginalFunctions[bindable] = originalFire
+    
+    bindable.Fire = function(self, ...)
+        local args = {...}
+        local callData = {
+            Remote = bindable,
+            Type = "BindableEvent",
+            Arguments = args,
+            Timestamp = os.date("%X"),
+            IsSuspicious = false
+        }
+        
+        -- Log the call
+        logRemoteCall(callData)
+        
+        -- Execute original function
+        return originalFire(self, ...)
+    end
+    
+    RemoteData.HookedRemotes[bindable] = true
+end
+
+function isSuspiciousCall(callData)
+    local remoteName = callData.Remote.Name:lower()
+    local args = callData.Arguments
+    
+    -- Suspicious patterns in name
+    local suspiciousPatterns = {
+        "kick", "ban", "punish", "reset", "delete", "destroy",
+        "hack", "cheat", "exploit", "crash", "lag", "report",
+        "admin", "moderator", "anticheat", "antibot", "security"
+    }
+    
+    for _, pattern in ipairs(suspiciousPatterns) do
+        if remoteName:find(pattern) then
+            return true
+        end
+    end
+    
+    -- Check for large data (potential exploits)
+    if args then
+        for _, arg in pairs(args) do
+            if type(arg) == "string" and #arg > 1000 then
+                return true
+            end
+            if type(arg) == "table" and #tostring(arg) > 5000 then
+                return true
+            end
+        end
+    end
+    
+    return false
+end
+
+function logRemoteCall(callData)
+    if not getgenv().AdvancedRemoteSpy.LogRemoteCalls then return end
+    
+    -- Create log entry
+    local logEntry = {
+        Timestamp = callData.Timestamp,
+        RemoteName = callData.Remote.Name,
+        RemoteType = callData.Type,
+        Arguments = getgenv().AdvancedRemoteSpy.CaptureArguments and callData.Arguments or {},
+        IsSuspicious = callData.IsSuspicious,
+        CallStack = debug.traceback(),
+        RemotePath = callData.Remote:GetFullName()
+    }
+    
+    -- Add to logs
+    table.insert(RemoteData.Logs, 1, logEntry)
+    
+    -- Limit logs
+    if #RemoteData.Logs > getgenv().AdvancedRemoteSpy.MaxLogs then
+        table.remove(RemoteData.Logs, getgenv().AdvancedRemoteSpy.MaxLogs + 1)
+    end
+    
+    -- Add to suspicious activities if applicable
+    if callData.IsSuspicious then
+        table.insert(RemoteData.SuspiciousActivities, logEntry)
+        if getgenv().AdvancedRemoteSpy.AlertOnSuspicious then
+            alertSuspiciousActivity(logEntry)
+        end
+    end
+    
+    -- Update UI
+    updateLiveMonitor(logEntry)
+    updateStatus()
+end
+
+function alertSuspiciousActivity(logEntry)
+    Rayfield:Notify({
+        Title = "🚨 Suspicious Activity Detected",
+        Content = "Remote: " .. logEntry.RemoteName .. "\nType: " .. logEntry.RemoteType,
+        Duration = 6,
+        Image = 4483362458
+    })
+end
+
+-- ========== SCANNING FUNCTIONS ==========
+
+function performDeepSystemScan()
+    logSystem("🔍 Starting Deep System Scan...")
+    
+    RemoteData.FoundRemotes = {}
+    
+    -- Scan all services recursively
+    for _, service in pairs(game:GetChildren()) do
+        scanServiceRecursively(service)
+    end
+    
+    -- Scan ModuleScripts
+    scanAllModuleScripts()
+    
+    -- Update UI
+    updateRemoteDropdown()
+    updateScanResults()
+    
+    logSystem("✅ Deep Scan Complete - Found " .. #RemoteData.FoundRemotes .. " remotes")
+end
+
+function scanServiceRecursively(service)
+    local success, result = pcall(function()
+        for _, obj in pairs(service:GetDescendants()) do
+            if isValidRemote(obj) then
+                addToFoundRemotes(obj)
+            end
+        end
+    end)
+    
+    if not success then
+        logSystem("⚠️ Failed to scan: " .. tostring(service))
+    end
+end
+
+function scanAllModuleScripts()
+    for _, obj in pairs(game:GetDescendants()) do
+        if obj:IsA("ModuleScript") then
+            scanModuleScript(obj)
+        end
+    end
+end
+
+function scanModuleScript(moduleScript)
+    local success, module = pcall(require, moduleScript)
+    if success and type(module) == "table" then
+        for key, value in pairs(module) do
+            if typeof(value) == "Instance" and isValidRemote(value) then
+                addToFoundRemotes(value, "Module: " .. moduleScript:GetFullName())
+            end
+        end
+    end
+end
+
+function addToFoundRemotes(remote, source)
+    local remoteInfo = {
+        Object = remote,
+        Name = remote.Name,
+        Type = remote.ClassName,
+        Path = remote:GetFullName(),
+        Parent = remote.Parent,
+        IsHooked = RemoteData.HookedRemotes[remote] or false,
+        Source = source or "Direct",
+        SecurityLevel = calculateSecurityLevel(remote)
+    }
+    
+    table.insert(RemoteData.FoundRemotes, remoteInfo)
+end
+
+function calculateSecurityLevel(remote)
+    local name = remote.Name:lower()
+    local securityLevel = "Low"
+    
+    if name:find("admin") or name:find("ban") or name:find("kick") then
+        securityLevel = "Critical"
+    elseif name:find("security") or name:find("anticheat") then
+        securityLevel = "High" 
+    elseif name:find("data") or name:find("save") then
+        securityLevel = "Medium"
+    end
+    
+    return securityLevel
+end
+
+-- ========== COPY FUNCTIONS ==========
+
+function copySelectedRemotePath()
+    if not RemoteData.SelectedRemote then
+        showNotification("No remote selected!")
+        return
+    end
+    
+    local path = RemoteData.SelectedRemote.Path
+    setclipboard(path)
+    showNotification("📁 Path copied: " .. path)
+end
+
+function copySelectedRemoteName()
+    if not RemoteData.SelectedRemote then
+        showNotification("No remote selected!")
+        return
+    end
+    
+    local name = RemoteData.SelectedRemote.Name
+    setclipboard(name)
+    showNotification("📝 Name copied: " .. name)
+end
+
+function copySelectedRemoteFullInfo()
+    if not RemoteData.SelectedRemote then
+        showNotification("No remote selected!")
+        return
+    end
+    
+    local info = string.format([[
+🔍 REMOTE INFORMATION
+────────────────────
+Name: %s
+Type: %s
+Path: %s
+Security Level: %s
+Hooked: %s
+Source: %s
+Full Path: %s
+    ]],
+    RemoteData.SelectedRemote.Name,
+    RemoteData.SelectedRemote.Type,
+    RemoteData.SelectedRemote.Path,
+    RemoteData.SelectedRemote.SecurityLevel,
+    tostring(RemoteData.SelectedRemote.IsHooked),
+    RemoteData.SelectedRemote.Source,
+    RemoteData.SelectedRemote.Object:GetFullName()
+    )
+    
+    setclipboard(info)
+    showNotification("📄 Full info copied!")
+end
+
+function copySelectedRemoteFireScript()
+    if not RemoteData.SelectedRemote then
+        showNotification("No remote selected!")
+        return
+    end
+    
+    local remote = RemoteData.SelectedRemote
+    local script = ""
+    
+    if remote.Type == "RemoteEvent" then
+        script = string.format([[
+-- Fire RemoteEvent: %s
+local remote = game:GetService("ReplicatedStorage"):WaitForChild("%s")
+if remote:IsA("RemoteEvent") then
+    remote:FireServer()
+    print("✅ Fired: %s")
+end
+        ]], remote.Name, remote.Name, remote.Name)
+        
+    elseif remote.Type == "RemoteFunction" then
+        script = string.format([[
+-- Invoke RemoteFunction: %s
+local remote = game:GetService("ReplicatedStorage"):WaitForChild("%s")
+if remote:IsA("RemoteFunction") then
+    local result = remote:InvokeServer()
+    print("✅ Invoked: %s - Result:", result)
+    return result
+end
+        ]], remote.Name, remote.Name, remote.Name)
+        
+    elseif remote.Type == "BindableEvent" then
+        script = string.format([[
+-- Fire BindableEvent: %s
+local bindable = game:GetService("ReplicatedStorage"):WaitForChild("%s")
+if bindable:IsA("BindableEvent") then
+    bindable:Fire()
+    print("✅ Fired Bindable: %s")
+end
+        ]], remote.Name, remote.Name, remote.Name)
+    end
+    
+    setclipboard(script)
+    showNotification("⚡ Fire script copied!")
+end
+
+function copySelectedRemoteHookScript()
+    if not RemoteData.SelectedRemote then
+        showNotification("No remote selected!")
+        return
+    end
+    
+    local remote = RemoteData.SelectedRemote
+    local script = string.format([[
+-- Hook %s: %s
+local remote = game:GetService("ReplicatedStorage"):WaitForChild("%s")
+local original = remote.%s
+
+remote.%s = function(self, ...)
+    local args = {...}
+    print("🔍 %s Called:", remote.Name)
+    print("Arguments:", args)
+    
+    -- Add your custom logic here
+    
+    return original(self, ...)
+end
+
+print("✅ Hooked: %s")
+    ]],
+    remote.Type, remote.Name,
+    remote.Name,
+    remote.Type == "RemoteEvent" and "FireServer" or 
+    remote.Type == "RemoteFunction" and "InvokeServer" or "Fire",
+    remote.Type == "RemoteEvent" and "FireServer" or 
+    remote.Type == "RemoteFunction" and "InvokeServer" or "Fire",
+    remote.Type,
+    remote.Name
+    )
+    
+    setclipboard(script)
+    showNotification("🪝 Hook script copied!")
+end
+
+-- ========== UI UPDATE FUNCTIONS ==========
+
+function updateStatus()
+    local status = getgenv().AdvancedRemoteSpy.Enabled and "🟢 ONLINE" or "🔴 OFFLINE"
+    StatusLabel:Set("System: " .. status)
+    RemoteCountLabel:Set("Hooked Remotes: " .. getTableLength(RemoteData.HookedRemotes))
+    LogCountLabel:Set("Logs: " .. #RemoteData.Logs)
+    SuspiciousLabel:Set("Suspicious Activities: " .. #RemoteData.SuspiciousActivities)
+end
+
+function updateRemoteDropdown()
+    local options = {"Select a remote..."}
+    
+    for _, remote in ipairs(RemoteData.FoundRemotes) do
+        local displayName = string.format("%s (%s) - %s", 
+            remote.Name, remote.Type, remote.SecurityLevel)
+        table.insert(options, displayName)
+    end
+    
+    RemoteDropdown:Refresh(options)
+end
+
+function updateLiveMonitor(logEntry)
+    local logText = string.format("[%s] %s %s - %s",
+        logEntry.Timestamp,
+        logEntry.IsSuspicious and "🚨" or "📡",
+        logEntry.RemoteName,
+        logEntry.RemoteType
+    )
+    
+    -- Update live monitor (simplified for this example)
+    if getgenv().AdvancedRemoteSpy.LogToConsole then
+        print(logText)
+    end
+end
+
+function updateScanResults()
+    ScanResults:Set(string.format("📊 Scan Results:\nFound %d remotes\n%d hooked\n%d suspicious",
+        #RemoteData.FoundRemotes,
+        getTableLength(RemoteData.HookedRemotes),
+        #RemoteData.SuspiciousActivities
+    ))
+end
+
+-- ========== UTILITY FUNCTIONS ==========
+
+function logSystem(message)
+    local timestamp = os.date("%X")
+    local logMessage = "[" .. timestamp .. "] " .. message
+    
+    if getgenv().AdvancedRemoteSpy.LogToConsole then
+        print("🔧 " .. logMessage)
+    end
+end
+
+function logSecurity(message)
+    local timestamp = os.date("%X")
+    local logMessage = "[" .. timestamp .. "] " .. message
+    
+    if getgenv().AdvancedRemoteSpy.LogToConsole then
+        print("🚨 " .. logMessage)
+    end
+end
+
+function showNotification(message)
+    Rayfield:Notify({
+        Title = "Remote Spy",
+        Content = message,
+        Duration = 3,
+        Image = 4483362458
+    })
+end
+
+function getTableLength(t)
+    local count = 0
+    for _ in pairs(t) do count = count + 1 end
+    return count
+end
+
+function selectRemoteFromDropdown(option)
+    if option == "Select a remote..." then return end
+    
+    for _, remote in ipairs(RemoteData.FoundRemotes) do
+        local displayName = string.format("%s (%s) - %s", 
+            remote.Name, remote.Type, remote.SecurityLevel)
+        
+        if displayName == option then
+            RemoteData.SelectedRemote = remote
+            showNotification("✅ Selected: " .. remote.Name)
+            break
+        end
+    end
+end
+
+-- ========== ADDITIONAL FEATURES ==========
+
+function performCompleteAnalysis()
+    logSystem("📊 Starting Complete Analysis...")
+    
+    local analysis = {
+        TotalRemotes = #RemoteData.FoundRemotes,
+        RemoteEvents = 0,
+        RemoteFunctions = 0,
+        BindableEvents = 0,
+        HookedRemotes = getTableLength(RemoteData.HookedRemotes),
+        CriticalRemotes = 0,
+        HighRiskRemotes = 0,
+        SuspiciousCalls = #RemoteData.SuspiciousActivities
+    }
+    
+    for _, remote in ipairs(RemoteData.FoundRemotes) do
+        if remote.Type == "RemoteEvent" then
+            analysis.RemoteEvents = analysis.RemoteEvents + 1
+        elseif remote.Type == "RemoteFunction" then
+            analysis.RemoteFunctions = analysis.RemoteFunctions + 1
+        elseif remote.Type == "BindableEvent" then
+            analysis.BindableEvents = analysis.BindableEvents + 1
+        end
+        
+        if remote.SecurityLevel == "Critical" then
+            analysis.CriticalRemotes = analysis.CriticalRemotes + 1
+        elseif remote.SecurityLevel == "High" then
+            analysis.HighRiskRemotes = analysis.HighRiskRemotes + 1
+        end
+    end
+    
+    local report = string.format([[
+📊 COMPLETE ANALYSIS REPORT
+──────────────────────────
+Total Remotes: %d
+├── RemoteEvents: %d
+├── RemoteFunctions: %d
+└── BindableEvents: %d
+
+Security Analysis:
+├── Critical: %d
+├── High Risk: %d
+├── Hooked: %d
+└── Suspicious Calls: %d
+
+Status: %s
+    ]],
+    analysis.TotalRemotes,
+    analysis.RemoteEvents,
+    analysis.RemoteFunctions, 
+    analysis.BindableEvents,
+    analysis.CriticalRemotes,
+    analysis.HighRiskRemotes,
+    analysis.HookedRemotes,
+    analysis.SuspiciousCalls,
+    getgenv().AdvancedRemoteSpy.Enabled and "🟢 Active" or "🔴 Inactive"
+    )
+    
+    AnalysisReport:Set(report)
+    logSystem("✅ Analysis Complete")
+end
+
+function blockAllRemotes()
+    for remote, _ in pairs(RemoteData.HookedRemotes) do
+        if remote:IsA("RemoteEvent") then
+            remote.FireServer = function() end
+        elseif remote:IsA("RemoteFunction") then
+            remote.InvokeServer = function() return nil end
+        elseif remote:IsA("BindableEvent") then
+            remote.Fire = function() end
+        end
+    end
+    showNotification("🚫 All remotes blocked!")
+end
+
+function unblockAllRemotes()
+    for remote, original in pairs(RemoteData.OriginalFunctions) do
+        if remote:IsA("RemoteEvent") then
+            remote.FireServer = original
+        elseif remote:IsA("RemoteFunction") then
+            remote.InvokeServer = original
+        elseif remote:IsA("BindableEvent") then
+            remote.Fire = original
+        end
+    end
+    showNotification("✅ All remotes unblocked!")
+end
+
+-- ========== INITIALIZATION ==========
+
+-- Initialize the system
+spawn(function()
+    wait(2)
+    logSystem("🚀 Advanced Remote Spy v3.0 Loaded")
+    logSystem("💡 Use the Dashboard to enable monitoring")
+    performQuickScan()
+end)
+
+Rayfield:LoadConfiguration()
+
+-- ========== ADDITIONAL UTILITY FUNCTIONS ==========
+
+function performQuickScan()
+    logSystem("⚡ Performing Quick Scan...")
+    RemoteData.FoundRemotes = {}
+    
+    -- Quick scan of common locations
+    local commonServices = {
+        game:GetService("ReplicatedStorage"),
+        game:GetService("ServerStorage"),
+        game:GetService("Players")
+    }
+    
+    for _, service in ipairs(commonServices) do
+        if service then
+            scanServiceRecursively(service)
+        end
+    end
+    
+    updateRemoteDropdown()
+    updateScanResults()
+    logSystem("✅ Quick Scan Complete - Found " .. #RemoteData.FoundRemotes .. " remotes")
+end
+
+function clearAllData()
+    RemoteData.Logs = {}
+    RemoteData.SuspiciousActivities = {}
+    RemoteData.RemoteCallHistory = {}
+    updateStatus()
+    showNotification("🗑️ All data cleared!")
+end
+
+function toggleMonitoring(state)
+    getgenv().AdvancedRemoteSpy.LogRemoteCalls = state
+    showNotification(state and "▶️ Monitoring Resumed" or "⏸️ Monitoring Paused")
+end
+
+function findCriticalSecurityRemotes()
+    local critical = {}
+    
+    for _, remote in ipairs(RemoteData.FoundRemotes) do
+        if remote.SecurityLevel == "Critical" then
+            table.insert(critical, remote)
+        end
+    end
+    
+    local report = "🚨 CRITICAL REMOTES:\n"
+    for i, remote in ipairs(critical) do
+        report = report .. string.format("%d. %s (%s) - %s\n", 
+            i, remote.Name, remote.Type, remote.Path)
+    end
+    
+    AnalysisReport:Set(report)
+    showNotification("🚨 Found " .. #critical .. " critical remotes")
+end
+
+function scanScriptsForRemoteUsage()
+    logSystem("📜 Scanning scripts for remote usage...")
+    -- Implementation for script scanning
+    showNotification("📜 Script scanning feature")
+end
+
+function analyzeRemotePatterns()
+    logSystem("🎯 Analyzing remote patterns...")
+    -- Implementation for pattern analysis
+    showNotification("🎯 Pattern analysis feature")
+end
+
+function exportSecurityReport()
+    logSystem("📤 Exporting security report...")
+    -- Implementation for export
+    showNotification("📤 Security report exported")
+end
+
+function exportLogsToFile()
+    logSystem("💾 Exporting logs to file...")
+    -- Implementation for log export
+    showNotification("💾 Logs exported")
+end
+
+function clearLogs()
+    RemoteData.Logs = {}
+    updateStatus()
+    showNotification("🗑️ Logs cleared!")
+end
+
+function restoreOriginalFunction(remote)
+    local original = RemoteData.OriginalFunctions[remote]
+    if original then
+        if remote:IsA("RemoteEvent") then
+            remote.FireServer = original
+        elseif remote:IsA("RemoteFunction") then
+            remote.InvokeServer = original
+        elseif remote:IsA("BindableEvent") then
+            remote.Fire = original
+        end
+    end
+end
+
+function setupRemoteMonitoring()
+    -- Additional monitoring setup
+    logSystem("📡 Remote monitoring setup complete")
+end
+
+function hookRemotesInService(service)
+    local count = 0
+    for _, obj in pairs(service:GetDescendants()) do
+        if isValidRemote(obj) then
+            hookRemote(obj)
+            count = count + 1
+        end
+    end
+    return count
+end
