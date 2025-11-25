@@ -1,0 +1,288 @@
+-- Combat Arena Script by Colin
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+
+local Window = Rayfield:CreateWindow({
+   Name = "Combat Arena Hacks",
+   LoadingTitle = "Loading Combat Arena...",
+   LoadingSubtitle = "by Colin",
+   ConfigurationSaving = {
+      Enabled = true,
+      FolderName = "CombatArena",
+      FileName = "Config.json"
+   },
+   KeySystem = false,
+})
+
+-- Main Tab
+local MainTab = Window:CreateTab("Main Hacks", 4483362458)
+
+-- Combat Section
+local CombatSection = MainTab:CreateSection("Combat Hacks")
+
+local KillAuraToggle = CombatSection:CreateToggle({
+   Name = "Kill Aura",
+   CurrentValue = false,
+   Flag = "KillAuraToggle",
+   Callback = function(Value)
+       _G.KillAura = Value
+       while _G.KillAura do
+           wait(0.2)
+           pcall(function()
+               for i, player in pairs(game:GetService("Players"):GetPlayers()) do
+                   if player ~= game.Players.LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+                       local mag = (game.Players.LocalPlayer.Character.HumanoidRootPart.Position - player.Character.HumanoidRootPart.Position).magnitude
+                       if mag < 25 then
+                           game:GetService("ReplicatedStorage").DamageEvent:FireServer(player.Character.Humanoid, 100)
+                       end
+                   end
+               end
+           end)
+       end
+   end,
+})
+
+local AimbotToggle = CombatSection:CreateToggle({
+   Name = "Aimbot",
+   CurrentValue = false,
+   Flag = "AimbotToggle",
+   Callback = function(Value)
+       _G.Aimbot = Value
+       local players = game:GetService("Players")
+       local player = players.LocalPlayer
+       
+       while _G.Aimbot do
+           wait()
+           pcall(function()
+               local closest = nil
+               local dist = math.huge
+               
+               for i, v in pairs(players:GetPlayers()) do
+                   if v ~= player and v.Character and v.Character:FindFirstChild("HumanoidRootPart") and v.Character.Humanoid.Health > 0 then
+                       local magnitude = (player.Character.HumanoidRootPart.Position - v.Character.HumanoidRootPart.Position).magnitude
+                       if magnitude < dist then
+                           closest = v
+                           dist = magnitude
+                       end
+                   end
+               end
+               
+               if closest then
+                   game:GetService("Workspace").CurrentCamera.CFrame = CFrame.new(
+                       game:GetService("Workspace").CurrentCamera.CFrame.Position,
+                       closest.Character.HumanoidRootPart.Position
+                   )
+               end
+           end)
+       end
+   end,
+})
+
+-- Movement Section
+local MovementSection = MainTab:CreateSection("Movement Hacks")
+
+local SpeedSlider = MovementSection:CreateSlider({
+   Name = "Walk Speed",
+   Range = {16, 100},
+   Increment = 1,
+   Suffix = "Speed",
+   CurrentValue = 16,
+   Flag = "SpeedSlider",
+   Callback = function(Value)
+       pcall(function()
+           game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = Value
+       end)
+   end,
+})
+
+local JumpSlider = MovementSection:CreateSlider({
+   Name = "Jump Power",
+   Range = {50, 200},
+   Increment = 1,
+   Suffix = "Power",
+   CurrentValue = 50,
+   Flag = "JumpSlider",
+   Callback = function(Value)
+       pcall(function()
+           game.Players.LocalPlayer.Character.Humanoid.JumpPower = Value
+       end)
+   end,
+})
+
+local FlyToggle = MovementSection:CreateToggle({
+   Name = "Fly",
+   CurrentValue = false,
+   Flag = "FlyToggle",
+   Callback = function(Value)
+       _G.Flying = Value
+       local player = game.Players.LocalPlayer
+       local character = player.Character or player.CharacterAdded:Wait()
+       local humanoid = character:WaitForChild("Humanoid")
+       
+       if Value then
+           local bodyVelocity = Instance.new("BodyVelocity")
+           bodyVelocity.Name = "FlyVelocity"
+           bodyVelocity.Parent = character.HumanoidRootPart
+           bodyVelocity.MaxForce = Vector3.new(40000, 40000, 40000)
+           
+           while _G.Flying and character and character:FindFirstChild("HumanoidRootPart") do
+               wait()
+               local root = character.HumanoidRootPart
+               bodyVelocity.Velocity = Vector3.new(0, 0, 0)
+               
+               if game:GetService("UserInputService"):IsKeyDown(Enum.KeyCode.W) then
+                   bodyVelocity.Velocity = bodyVelocity.Velocity + (root.CFrame.LookVector * 50)
+               end
+               if game:GetService("UserInputService"):IsKeyDown(Enum.KeyCode.S) then
+                   bodyVelocity.Velocity = bodyVelocity.Velocity + (root.CFrame.LookVector * -50)
+               end
+               if game:GetService("UserInputService"):IsKeyDown(Enum.KeyCode.A) then
+                   bodyVelocity.Velocity = bodyVelocity.Velocity + (root.CFrame.RightVector * -50)
+               end
+               if game:GetService("UserInputService"):IsKeyDown(Enum.KeyCode.D) then
+                   bodyVelocity.Velocity = bodyVelocity.Velocity + (root.CFrame.RightVector * 50)
+               end
+           end
+           
+           if character:FindFirstChild("FlyVelocity") then
+               character.FlyVelocity:Destroy()
+           end
+       else
+           if character and character:FindFirstChild("FlyVelocity") then
+               character.FlyVelocity:Destroy()
+           end
+       end
+   end,
+})
+
+-- Player Section
+local PlayerSection = MainTab:CreateSection("Player Hacks")
+
+local GodModeToggle = PlayerSection:CreateToggle({
+   Name = "God Mode",
+   CurrentValue = false,
+   Flag = "GodModeToggle",
+   Callback = function(Value)
+       _G.GodMode = Value
+       if Value then
+           pcall(function()
+               game.Players.LocalPlayer.Character.Humanoid.MaxHealth = math.huge
+               game.Players.LocalPlayer.Character.Humanoid.Health = math.huge
+           end)
+       end
+   end,
+})
+
+local NoClipToggle = PlayerSection:CreateToggle({
+   Name = "No Clip",
+   CurrentValue = false,
+   Flag = "NoClipToggle",
+   Callback = function(Value)
+       _G.NoClip = Value
+       local player = game.Players.LocalPlayer
+       
+       if Value then
+           pcall(function()
+               for i, part in pairs(player.Character:GetDescendants()) do
+                   if part:IsA("BasePart") then
+                       part.CanCollide = false
+                   end
+               end
+           end)
+       else
+           pcall(function()
+               for i, part in pairs(player.Character:GetDescendants()) do
+                   if part:IsA("BasePart") then
+                       part.CanCollide = true
+                   end
+               end
+           end)
+       end
+   end,
+})
+
+-- Auto Farm Tab
+local FarmTab = Window:CreateTab("Auto Farm", 4483362458)
+
+local FarmSection = FarmTab:CreateSection("Farming Options")
+
+local AutoFarmToggle = FarmSection:CreateToggle({
+   Name = "Auto Farm Kills",
+   CurrentValue = false,
+   Flag = "AutoFarmToggle",
+   Callback = function(Value)
+       _G.AutoFarm = Value
+       while _G.AutoFarm do
+           wait(1)
+           pcall(function()
+               for i, player in pairs(game:GetService("Players"):GetPlayers()) do
+                   if player ~= game.Players.LocalPlayer and player.Character and player.Character:FindFirstChild("Humanoid") then
+                       local mag = (game.Players.LocalPlayer.Character.HumanoidRootPart.Position - player.Character.HumanoidRootPart.Position).magnitude
+                       if mag < 30 then
+                           game:GetService("ReplicatedStorage").DamageEvent:FireServer(player.Character.Humanoid, 100)
+                       end
+                   end
+               end
+           end)
+       end
+   end,
+})
+
+local CollectCoinsToggle = FarmSection:CreateToggle({
+   Name = "Auto Collect Coins",
+   CurrentValue = false,
+   Flag = "CollectCoinsToggle",
+   Callback = function(Value)
+       _G.CollectCoins = Value
+       while _G.CollectCoins do
+           wait(0.5)
+           pcall(function()
+               for i, obj in pairs(game:GetService("Workspace"):GetChildren()) do
+                   if obj.Name:lower():find("coin") or obj.Name:lower():find("money") then
+                       if obj:IsA("Part") then
+                           game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = obj.CFrame
+                       end
+                   end
+               end
+           end)
+       end
+   end,
+})
+
+-- Visuals Tab
+local VisualsTab = Window:CreateTab("Visuals", 4483362458)
+
+local ESPToggle = VisualsTab:CreateToggle({
+   Name = "Player ESP",
+   CurrentValue = false,
+   Flag = "ESPToggle",
+   Callback = function(Value)
+       _G.ESP = Value
+       if Value then
+           -- ESP implementation
+           for i, player in pairs(game:GetService("Players"):GetPlayers()) do
+               if player ~= game.Players.LocalPlayer then
+                   pcall(function()
+                       local highlight = Instance.new("Highlight")
+                       highlight.Parent = player.Character
+                       highlight.FillColor = Color3.fromRGB(255, 0, 0)
+                       highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+                   end)
+               end
+           end
+       else
+           for i, player in pairs(game:GetService("Players"):GetPlayers()) do
+               if player.Character then
+                   pcall(function()
+                       local highlight = player.Character:FindFirstChild("Highlight")
+                       if highlight then
+                           highlight:Destroy()
+                       end
+                   end)
+               end
+           end
+       end
+   end,
+})
+
+Rayfield:LoadConfiguration()
+print("Combat Arena Hacks Loaded Successfully!")
