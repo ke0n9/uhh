@@ -562,4 +562,44 @@ end)
 
 G2L["26"].MouseButton1Click:Connect(function()
     for _, frame in pairs({G2L["18"], G2L["19"], G2L["20"]}) do
-        for _, child in pairs(frame:
+        for _, child in pairs(frame:GetChildren()) do
+            if child:IsA("TextButton") and child.Visible then
+                child:Destroy()
+            end
+        end
+    end
+    G2L["22"].Text = "Select a remote to view code..."
+    updateCounter()
+end)
+
+-- Initialize remote hooking
+local function initializeHooking()
+    local folders = {
+        game:GetService("ReplicatedStorage"),
+        game:GetService("StarterGui"),
+        game:GetService("StarterPack"),
+        game:GetService("StarterPlayer"),
+        game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui"),
+        game:GetService("Players").LocalPlayer:WaitForChild("Backpack")
+    }
+    
+    for _, folder in pairs(folders) do
+        for _, remote in pairs(folder:GetDescendants()) do
+            if remote:IsA("RemoteEvent") or remote:IsA("RemoteFunction") then
+                hookRemote(remote)
+            end
+        end
+        
+        folder.DescendantAdded:Connect(function(descendant)
+            if descendant:IsA("RemoteEvent") or descendant:IsA("RemoteFunction") then
+                hookRemote(descendant)
+            end
+        end)
+    end
+end
+
+-- Start the spy
+initializeHooking()
+print("Advanced Remote Spy Loaded - Mobile Drag & Reopen Features Added")
+
+return G2L["1"]
